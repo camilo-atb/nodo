@@ -2,9 +2,16 @@ import type { Config } from 'tailwindcss';
 
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        // Nodo design system (from steering/ui-design-system.md)
+        nodo: {
+          cyan: '#12c7e5',
+          green: '#21d69a',
+        },
+        // Legacy (used by existing components — migrate gradually)
         bg: '#07080d',
         panel: {
           DEFAULT: '#0d0f17',
@@ -17,7 +24,7 @@ export default {
           2: '#656c7e',
         },
         accent: {
-          DEFAULT: '#06b6d4',
+          DEFAULT: '#12c7e5',
           2: '#0891b2',
         },
         violet: {
@@ -31,6 +38,7 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
     },
   },

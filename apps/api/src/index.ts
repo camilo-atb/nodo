@@ -33,7 +33,7 @@ process.on('uncaughtException', (error) => {
 
 const main = async (): Promise<void> => {
   const env = loadEnv();
-  const { db } = createDb(env.DATABASE_URL);
+  const { db } = createDb(env.DATABASE_URL, { max: env.NODE_ENV === 'development' ? 1 : 10 });
 
   const vocabulary = await loadVocabulary(db);
   if (vocabulary.all().length === 0) {
