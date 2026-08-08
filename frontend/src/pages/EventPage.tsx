@@ -26,11 +26,21 @@ export function EventPage() {
   const [event, setEvent] = useState<NodoEvent | null>(null);
 
   useEffect(() => {
-    if (eventId) {
-      setCurrentEvent(eventId);
-      const found = events.find((e) => e.id === eventId);
-      if (found) setEvent(found);
+    if (!eventId) return;
+    setCurrentEvent(eventId);
+
+    const found = events.find((e) => e.id === eventId);
+    if (found) {
+      setEvent(found);
+    } else {
+      // Entrar por enlace directo no pasa por Discover, así que el store está
+      // vacío. Sin esto la página se queda en blanco en cuanto alguien
+      // comparte una URL o recarga.
+      void apiFetch<NodoEvent>(`/v1/events/${eventId}`)
+        .then(setEvent)
+        .catch(() => setEvent(null));
     }
+
     return () => setCurrentEvent(null);
   }, [eventId, events, setCurrentEvent]);
 

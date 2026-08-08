@@ -5,6 +5,7 @@
  * Montar este hook ES la suscripción — no hay .subscribe() aparte.
  */
 
+import { useEffect } from 'react';
 import { useChannel } from '@portalsdk/react';
 import { useGraphStore } from '@/stores/graphStore';
 import { useFeedStore } from '@/stores/feedStore';
@@ -24,6 +25,23 @@ interface MainEventContent {
 }
 
 export function usePortalChannel() {
+  /**
+   * Carga inicial del grafo, **independiente de Portal**.
+   *
+   * El paso 3 del contrato de arranque —`GET /v1/graph`— y el paso 4
+   * —suscribirse— son independientes (docs-backend/03). Antes de esto,
+   * `refetchSnapshot()` solo se llamaba al detectar un hueco de `seq`, así que
+   * el grafo no llegaba tarde: no se pedía nunca. Si Portal no conectaba —sin
+   * perfil, sin `pk_`, sin `portal deploy`— la aplicación se veía vacía aunque
+   * el API tuviera los datos.
+   *
+   * `GET /v1/graph` es público y sin autenticación por diseño, así que la red
+   * puede leerse siempre; el tiempo real solo añade los cambios en vivo.
+   */
+  useEffect(() => {
+    void refetchSnapshot();
+  }, []);
+
   const { status, presence } = useChannel<MainEventContent>({
     channelId: CHANNEL_NETWORK_MAIN,
     history: 50,
@@ -38,9 +56,9 @@ export function usePortalChannel() {
       // Duplicate — ignore
       if (seq <= lastSeq) return;
 
-      // Gap detected — re-fetch snapshot
+      // Hueco detectado — el backfill de 50 no alcanza, se re-pide el snapshot
       if (seq > lastSeq + 1) {
-        refetchSnapshot();
+        void refetchSnapshot();
         return;
       }
 

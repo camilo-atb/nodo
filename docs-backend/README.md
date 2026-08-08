@@ -148,8 +148,9 @@ Salieron de arrancar la aplicación contra el API real, no de leer el código. L
 
 | Tarea | Por qué |
 |---|---|
-| `refetchSnapshot()` debe llamarse **al montar**, no solo ante huecos de `seq` | Hoy vive dentro de `usePortalChannel.ts` y solo se invoca en la detección de huecos, así que **el snapshot del grafo está acoplado a que Portal conecte**. Si el canal falla, la app se ve vacía aunque el API tenga datos. `GET /v1/graph` es público y sin autenticación por diseño: debería cargar siempre |
+| ~~`usePortalChannel` sin montar~~ **resuelto** | El diagnóstico inicial —«el snapshot está acoplado a que Portal conecte»— se quedaba corto: el hook **no lo llamaba nadie**, así que ni la suscripción ni la carga del grafo llegaban a ejecutarse. Se monta en `MainLayout` y `refetchSnapshot()` pasa a correr también al montar, porque `GET /v1/graph` es público y no debe depender del tiempo real |
 | El canal del reto pasa a `challenge-{teamId}-{challengeId}` | `authz` corre dentro de Portal **sin base de datos** y no puede traducir un id de reto a un equipo. Una línea en `hooks/useChallengeChannel.ts` ([12](12-live-quiz.md)) |
+| `POST /v1/events/:id/join` no existe ni debe existir | Una Person no se une a un `Event`: se une a un **Team**. Entrar a un contenedor es navegación y filtrado, no membresía (ADR-013). El frontend ya ignora el fallo; la llamada sobra |
 | Usar `memberCount` en vez de `members.length` | en sobres, `members` viaja acotado a 8 ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)) |
 | `VITE_API_URL` apunta a `:3000` en `.env.example` | el API escucha en `:8080` |
 
