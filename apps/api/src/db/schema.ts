@@ -171,7 +171,10 @@ export const teams = pgTable(
     frozen: boolean('frozen').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [check('teams_max_size_check', sql`${t.maxSize} between 1 and 4`)],
+  // Sin tope superior (ADR-014): un proyecto de código abierto necesita más
+    // de cuatro. El recorte de `members` en los sobres es lo que respeta el
+    // límite de 2KB de Portal, no un tope al equipo.
+    (t) => [check('teams_max_size_check', sql`${t.maxSize} >= 1`)],
 );
 
 export const suggestions = pgTable(

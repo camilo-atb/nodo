@@ -2,9 +2,24 @@ import { z } from 'zod';
 import { GraphPatch, NodeKind } from './graph.js';
 import { EpochMs, EventId, Handle, PersonId } from './primitives.js';
 
-/** El agente es un nodo de primera clase del grafo, no una función anónima. */
+/**
+ * Los agentes son nodos de primera clase del grafo, no funciones anónimas.
+ *
+ * `AgentId` es una unión y no un literal porque hay dos actores: `matchmaker`
+ * sugiere encajes (docs/06) y `quizmaster` redacta los retos (docs/12). Son
+ * dos actores del dominio, **no dos credenciales**: comparten el mismo
+ * `LlmProvider` y la misma `LLM_API_KEY` (ADR-007).
+ */
 export const AGENT_ID = 'matchmaker';
 export const AGENT_DISPLAY_NAME = 'MatchMaker';
+export const QUIZMASTER_ID = 'quizmaster';
+export const QUIZMASTER_DISPLAY_NAME = 'QuizMaster';
+
+export const AgentId = z.enum([AGENT_ID, QUIZMASTER_ID]);
+export type AgentId = z.infer<typeof AgentId>;
+
+/** Prefijo de `senderId` de todo agente. Lo usa el guardarraíl anti-bucle. */
+export const AGENT_SENDER_PREFIX = 'agent:';
 
 export const ActorRef = z.discriminatedUnion('kind', [
   z.object({
@@ -15,8 +30,8 @@ export const ActorRef = z.discriminatedUnion('kind', [
   }),
   z.object({
     kind: z.literal('agent'),
-    id: z.literal(AGENT_ID),
-    displayName: z.literal(AGENT_DISPLAY_NAME),
+    id: AgentId,
+    displayName: z.string().min(1),
   }),
 ]);
 export type ActorRef = z.infer<typeof ActorRef>;

@@ -13,6 +13,7 @@ import type {
   TeamDTO,
   TeamStatus,
 } from '@nodo/contracts';
+import { MAX_MEMBERS_IN_ENVELOPE } from '@nodo/contracts';
 
 /**
  * Mapeadores explícitos. El backend **no** serializa filas directamente: una
@@ -81,11 +82,28 @@ export const toTeamDTO = (
   status,
   lead,
   members,
+  memberCount: members.length,
   needs,
   ideaId: row.ideaId,
   maxSize: row.maxSize,
   createdAt: epoch(row.createdAt),
 });
+
+/**
+ * Recorta `members` para que el sobre quepa en los 2KB de Portal (ADR-014).
+ *
+ * El líder va primero para que siga siendo identificable tras el recorte, y
+ * `memberCount` **no se toca**: es la verdad, y `members.length` deja de serlo
+ * en cuanto el equipo pasa de `MAX_MEMBERS_IN_ENVELOPE`.
+ *
+ * Se aplica solo al publicar. `GET /v1/teams/:id` devuelve la lista completa.
+ */
+export const forEnvelope = (team: TeamDTO): TeamDTO => {
+  if (team.members.length <= MAX_MEMBERS_IN_ENVELOPE) return team;
+
+  const rest = team.members.filter((m) => m.id !== team.lead.id);
+  return { ...team, members: [team.lead, ...rest].slice(0, MAX_MEMBERS_IN_ENVELOPE) };
+};
 
 export type IdeaRow = {
   id: string;

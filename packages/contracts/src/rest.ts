@@ -6,7 +6,6 @@ import {
   Handle,
   IdeaId,
   LanguageCode,
-  MAX_TEAM_SIZE,
   NeedPriority,
   PersonId,
   SkillRef,
@@ -75,7 +74,7 @@ export const CreateTeamRequest = z.object({
   pitch: z.string().nullish(),
   ideaId: IdeaId.nullish(),
   needs: z.array(NeedInput).default([]),
-  maxSize: z.number().int().min(1).max(MAX_TEAM_SIZE).optional(),
+  maxSize: z.number().int().min(1).optional(),
 });
 export type CreateTeamRequest = z.infer<typeof CreateTeamRequest>;
 

@@ -100,6 +100,9 @@ export function TeamPage() {
               status: (teamNode.status as TeamStatus) ?? 'recruiting',
               lead,
               members: members.length > 0 ? members : [lead],
+              // `members` del grafo puede venir recortado (ADR-014): en un
+              // sobre viaja acotado a 8. `memberCount` es el censo real.
+              memberCount: (teamNode.meta?.['memberCount'] as number) ?? Math.max(members.length, 1),
               needs,
               ideaId: (teamNode.meta?.['ideaId'] as string) ?? null,
               maxSize: (teamNode.meta?.['maxSize'] as number) ?? 4,

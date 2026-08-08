@@ -83,8 +83,26 @@ export type SuggestionDirection = z.infer<typeof SuggestionDirection>;
 export const NeedPriority = z.enum(['required', 'nice']);
 export type NeedPriority = z.infer<typeof NeedPriority>;
 
-/** Máximo de integrantes de un equipo (docs/04: `check (max_size between 1 and 4)`). */
-export const MAX_TEAM_SIZE = 4;
+/**
+ * Tamaño de equipo **por defecto**, no un tope (ADR-014).
+ *
+ * `max_size` perdió su límite superior —`check (max_size >= 1)`— porque un
+ * proyecto de código abierto necesita más de cuatro colaboradores. El 4 sigue
+ * siendo el valor por defecto, que es el caso de un equipo de hackathon.
+ */
+export const DEFAULT_TEAM_SIZE = 4;
+
+/**
+ * Cuántos `PersonRef` caben en `TeamDTO.members` **dentro de un sobre**.
+ *
+ * El `content` de un mensaje de Portal está limitado a 2KB. Con el envoltorio
+ * del sobre y el resto del DTO, pasado el orden de 8 miembros `team.updated`
+ * excede ese límite, Portal rechaza la publicación y el evento se pierde. Por
+ * eso `memberCount` —y no `members.length`— es la verdad (ADR-014).
+ *
+ * `GET /v1/teams/:id` no aplica este recorte: devuelve la lista completa.
+ */
+export const MAX_MEMBERS_IN_ENVELOPE = 8;
 
 // ─── Referencias ligeras ────────────────────────────────────────────────────
 // Se embeben dentro de otros DTO cuando solo hace falta identificar y mostrar.

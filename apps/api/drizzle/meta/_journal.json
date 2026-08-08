@@ -8,6 +8,13 @@
       "when": 1785999644786,
       "tag": "0000_eager_ravenous",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786195949141,
+      "tag": "0001_special_norrin_radd",
+      "breakpoints": true
     }
   ]
 }

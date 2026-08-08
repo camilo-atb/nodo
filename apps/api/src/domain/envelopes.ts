@@ -17,6 +17,7 @@ import {
   type TeamEvent,
 } from '@nodo/contracts';
 import { eventId } from './ids.js';
+import { forEnvelope } from './mappers.js';
 
 /**
  * Construcción de sobres. Un solo sitio sabe qué parche de grafo acompaña a
@@ -167,7 +168,7 @@ export const ideaPublished = (idea: IdeaDTO): MainEvent => ({
 export const teamCreated = (team: TeamDTO): MainEvent => ({
   ...base(personActor(team.lead)),
   type: 'team.created',
-  payload: { team },
+  payload: { team: forEnvelope(team) },
   summary: {
     text: `${team.lead.displayName} creó el equipo ${team.name}`,
     icon: '🚀',
@@ -186,7 +187,7 @@ export const teamUpdated = (
 ): MainEvent => ({
   ...base(actor),
   type: 'team.updated',
-  payload: { team },
+  payload: { team: forEnvelope(team) },
   summary: {
     text: `${team.name} actualizó lo que busca`,
     icon: '🧩',

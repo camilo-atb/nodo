@@ -95,6 +95,7 @@ describe('TeamDTO', () => {
     status: 'recruiting',
     lead: { id: 'per_laura', handle: 'laura', displayName: 'Laura' },
     members: [{ id: 'per_laura', handle: 'laura', displayName: 'Laura' }],
+    memberCount: 1,
     needs: [{ slug: 'go', label: 'Go', category: 'backend', priority: 'required' }],
     ideaId: null,
     maxSize: 4,
@@ -105,16 +106,38 @@ describe('TeamDTO', () => {
     expect(TeamDTO.parse(team).members).toHaveLength(1);
   });
 
-  it('no admite más integrantes que el máximo del dominio', () => {
-    const lleno = {
+  /**
+   * ADR-014 retiró el tope de 4: un proyecto de código abierto necesita más.
+   * El límite de 2KB de Portal se respeta recortando `members` al publicar
+   * (`forEnvelope`), no acotando el equipo.
+   */
+  it('admite equipos grandes: el tope de 4 desapareció', () => {
+    const grande = {
       ...team,
-      members: Array.from({ length: 5 }, (_, i) => ({
+      maxSize: 40,
+      members: Array.from({ length: 30 }, (_, i) => ({
         id: `per_${i}`,
         handle: `p${i}`,
         displayName: `P${i}`,
       })),
+      memberCount: 30,
     };
-    expect(TeamDTO.safeParse(lleno).success).toBe(false);
+    expect(TeamDTO.safeParse(grande).success).toBe(true);
+  });
+
+  /**
+   * En un sobre, `members` viene recortado y `memberCount` no. Que diverjan es
+   * el caso normal, no un error de validación: por eso el contador de la
+   * interfaz debe leer `memberCount` (ADR-014).
+   */
+  it('acepta que memberCount supere a members.length', () => {
+    const recortado = { ...team, memberCount: 30 };
+    expect(TeamDTO.parse(recortado).memberCount).toBe(30);
+  });
+
+  it('exige memberCount: sin él no se sabe el tamaño real', () => {
+    const { memberCount: _omitido, ...sinContador } = team;
+    expect(TeamDTO.safeParse(sinContador).success).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ import type { PortalTokenResponse } from '@nodo/contracts';
 import { listPendingApplicationTeamIds } from '../../db/applications-repo.js';
 import { getPersonTeamId } from '../../db/people-repo.js';
 import { processedEvents } from '../../db/schema.js';
-import { isFromMatchmaker, verifyHmac } from '../../portal/webhook.js';
+import { isFromAgent, verifyHmac } from '../../portal/webhook.js';
 import type { AppContext } from '../context.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createRouter } from '../types.js';
@@ -50,7 +50,7 @@ export const portalRoutes = (ctx: AppContext) => {
     const evt = JSON.parse(rawBody) as { id?: string; data?: { senderId?: string } };
 
     // Guardarraíl anti-bucle. Sin esto el agente se retroalimenta.
-    if (isFromMatchmaker(evt)) return c.body(null, 204);
+    if (isFromAgent(evt)) return c.body(null, 204);
 
     if (!evt.id) return c.body(null, 204);
     const fresh = await markProcessedIfNew(ctx, evt.id);

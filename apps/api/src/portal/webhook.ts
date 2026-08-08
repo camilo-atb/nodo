@@ -1,5 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
+import { AGENT_SENDER_PREFIX } from '@nodo/contracts';
+
 /**
  * HMAC-SHA256 del webhook de Portal, verificado **antes** de parsear el body
  * (docs/05). El orden importa: parsear un body no verificado abre la puerta a
@@ -20,7 +22,11 @@ export const verifyHmac = (rawBody: string, signatureHeader: string | undefined,
 
 /**
  * Guardarraíl anti-bucle de ADR-004: sin este filtro, el receptor de webhook
- * reprocesaría las propias publicaciones del agente y se retroalimentaría.
+ * reprocesaría las propias publicaciones de un agente y se retroalimentaría.
+ *
+ * Compara **por prefijo, no por id exacto**. Comparar contra
+ * `'agent:matchmaker'` dejaría pasar a `quizmaster` (docs/12), y el bucle del
+ * agente es el riesgo que docs/07 marca como *fatal*.
  */
-export const isFromMatchmaker = (event: { data?: { senderId?: string } }): boolean =>
-  event.data?.senderId === 'agent:matchmaker';
+export const isFromAgent = (event: { data?: { senderId?: string } }): boolean =>
+  event.data?.senderId?.startsWith(AGENT_SENDER_PREFIX) ?? false;

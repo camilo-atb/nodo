@@ -7,7 +7,6 @@ import {
   Handle,
   IdeaId,
   LanguageCode,
-  MAX_TEAM_SIZE,
   NeedRef,
   PersonId,
   PersonRef,
@@ -50,10 +49,17 @@ export const TeamDTO = z.object({
   /** Derivado por cascada salvo `building` (docs/02). */
   status: TeamStatus,
   lead: PersonRef,
-  members: z.array(PersonRef).min(1).max(MAX_TEAM_SIZE),
+  /**
+   * En `GET /v1/teams/:id` es la lista completa; en un sobre viaja acotada a
+   * `MAX_MEMBERS_IN_ENVELOPE` con el líder primero (ADR-014). Para el contador
+   * «X de Y» hay que leer `memberCount`, nunca `members.length`.
+   */
+  members: z.array(PersonRef).min(1),
+  memberCount: z.number().int().nonnegative(),
   needs: z.array(NeedRef),
   ideaId: IdeaId.nullable(),
-  maxSize: z.number().int().min(1).max(MAX_TEAM_SIZE),
+  /** Sin tope superior desde ADR-014: el 4 es el valor por defecto. */
+  maxSize: z.number().int().min(1),
   createdAt: EpochMs,
 });
 export type TeamDTO = z.infer<typeof TeamDTO>;
