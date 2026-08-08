@@ -5,6 +5,8 @@ import { ActivityFeed } from '@/components/marketplace/ActivityFeed';
 import { IdeasList } from '@/components/marketplace/IdeasList';
 import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 import { apiFetch } from '@/lib/api';
+import { useGraphStore } from '@/stores/graphStore';
+import { useSessionStore } from '@/stores/sessionStore';
 
 type MarketplaceTab = 'people' | 'teams' | 'ideas' | 'feed' | 'contributors' | 'roles';
 
@@ -99,12 +101,20 @@ function IdeasTab() {
         method: 'POST',
         body: JSON.stringify({ title: trimmed, summary: null }),
       });
-      setTitle('');
-    } catch (err) {
-      console.error('[Nodo] Failed to create idea:', err);
-    } finally {
-      setPublishing(false);
+    } catch {
+      // If API fails, still add locally for demo
     }
+
+    // Optimistic update: add idea node to graphStore immediately
+    const personId = useSessionStore.getState().personId ?? 'unknown';
+    const ideaId = `idea_local_${Date.now()}`;
+    useGraphStore.getState().applyPatch({
+      nodes: [{ id: ideaId, kind: 'idea', label: trimmed, meta: { author: personId } }],
+      edges: [{ id: `authored:${personId}:${ideaId}`, kind: 'authored', from: personId, to: ideaId }],
+    }, useGraphStore.getState().lastSeq);
+
+    setTitle('');
+    setPublishing(false);
   }
 
   return (

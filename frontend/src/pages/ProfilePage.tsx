@@ -1,14 +1,17 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGraphStore } from '@/stores/graphStore';
+import { useEventStore } from '@/stores/eventStore';
 import { Badge } from '@/components/base/Badge';
 import { Avatar } from '@/components/base/Avatar';
 import { Spinner } from '@/components/base/Spinner';
+import { Card } from '@/components/base/Card';
 
 export function ProfilePage() {
-  const { personId } = useParams<{ personId: string }>();
+  const { personId, eventId } = useParams<{ personId: string; eventId: string }>();
   const navigate = useNavigate();
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
+  const currentEventId = useEventStore((s) => s.currentEventId) ?? eventId;
 
   const person = personId ? nodes.get(personId) : undefined;
 
@@ -29,10 +32,27 @@ export function ProfilePage() {
     }
   });
 
-  const statusColor = person.status === 'looking' ? 'green' : person.status === 'busy' ? 'amber' : 'muted';
+  // Get team via member_of edge
+  const memberEdge = Array.from(edges.values()).find(
+    (e) => e.kind === 'member_of' && e.from === person.id,
+  );
+  const teamInfo = memberEdge ? nodes.get(memberEdge.to) : undefined;
+
+  // Get ideas via authored edge
+  const ideas: { id: string; label: string }[] = [];
+  edges.forEach((edge) => {
+    if (edge.kind === 'authored' && edge.from === person.id) {
+      const ideaNode = nodes.get(edge.to);
+      if (ideaNode && ideaNode.kind === 'idea') {
+        ideas.push({ id: ideaNode.id, label: ideaNode.label });
+      }
+    }
+  });
+
+  const statusColor = person.status === 'looking' ? 'green' : person.status === 'teamed' ? 'accent' : 'muted';
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col items-center pt-16 px-4">
+    <div className="min-h-screen bg-bg flex flex-col items-center pt-16 px-4 pb-12">
       <div className="max-w-md w-full border border-border bg-panel rounded-2xl p-6">
         {/* Back button */}
         <button
@@ -54,6 +74,38 @@ export function ProfilePage() {
           </div>
         </div>
 
+        {/* Team */}
+        {teamInfo && (
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Team</h2>
+            <Card
+              className="cursor-pointer"
+              onClick={() => currentEventId && navigate(`/event/${currentEventId}/team/${teamInfo!.id}`)}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-sm bg-[#2dd4bf]" />
+                <span className="text-sm font-medium text-white">{teamInfo.label}</span>
+                <span className="text-xs text-muted ml-auto">View →</span>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Ideas */}
+        {ideas.length > 0 && (
+          <div className="mb-5">
+            <h2 className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">Ideas</h2>
+            <div className="flex flex-col gap-1.5">
+              {ideas.map((idea) => (
+                <div key={idea.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-panel-2 border border-border">
+                  <span className="w-3 h-3 rounded-sm bg-[#8b5cf6] rotate-45" />
+                  <span className="text-sm text-white">{idea.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Skills */}
         {skills.length > 0 && (
           <div>
@@ -71,8 +123,8 @@ export function ProfilePage() {
           </div>
         )}
 
-        {skills.length === 0 && (
-          <p className="text-xs text-muted-2">No skills listed yet.</p>
+        {!teamInfo && ideas.length === 0 && skills.length === 0 && (
+          <p className="text-xs text-muted-2">No additional info available.</p>
         )}
       </div>
     </div>

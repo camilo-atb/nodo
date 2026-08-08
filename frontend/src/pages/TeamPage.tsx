@@ -209,26 +209,8 @@ export function TeamPage() {
         )}
 
         {/* Challenges section */}
-        {isMember && eventId && (
-          <section className="mb-6">
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
-              Challenges
-            </h2>
-            <div className="bg-panel border border-border rounded-xl p-4">
-              <Link
-                to={`/event/${eventId}/challenge/mock-challenge`}
-                className="flex items-center justify-between group"
-              >
-                <div>
-                  <p className="text-sm font-medium text-white group-hover:text-accent transition-colors">
-                    Skill Validation Challenge
-                  </p>
-                  <p className="text-xs text-muted mt-0.5">Active • Prove your technical skills</p>
-                </div>
-                <span className="text-muted group-hover:text-accent transition-colors">→</span>
-              </Link>
-            </div>
-          </section>
+        {isMember && eventId && teamId && (
+          <ChallengesSection teamId={teamId} eventId={eventId} isLeader={isLeader} needs={team.needs} />
         )}
 
         {/* Apply button for non-members */}
@@ -246,5 +228,98 @@ export function TeamPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Challenges Section ──────────────────────────────────────────────────────
+
+function ChallengesSection({ teamId, eventId, isLeader, needs }: { teamId: string; eventId: string; isLeader: boolean; needs: NeedRef[] }) {
+  const [challenges, setChallenges] = useState<{ id: string; title: string; status: string; skillSlug: string }[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [selectedSkill, setSelectedSkill] = useState('');
+
+  // Fetch existing challenges
+  useEffect(() => {
+    apiFetch<{ challenges: { id: string; title: string; status: string; skillSlug: string }[] }>(`/v1/teams/${teamId}/challenges`)
+      .then((res) => setChallenges(res.challenges ?? []))
+      .catch(() => {
+        // No challenges endpoint yet — leave empty
+      });
+  }, [teamId]);
+
+  async function handleCreate() {
+    if (!selectedSkill) return;
+    setCreating(true);
+    try {
+      const res = await apiFetch<{ challenge: { id: string; title: string; status: string; skillSlug: string } }>(`/v1/teams/${teamId}/challenges`, {
+        method: 'POST',
+        body: JSON.stringify({ skillSlug: selectedSkill }),
+      });
+      setChallenges((prev) => [...prev, res.challenge]);
+      setSelectedSkill('');
+    } catch (err) {
+      console.error('[Nodo] Failed to create challenge:', err);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <section className="mb-6">
+      <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
+        Challenges
+      </h2>
+
+      {/* Existing challenges */}
+      {challenges.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {challenges.map((ch) => (
+            <Link
+              key={ch.id}
+              to={`/event/${eventId}/challenge/${ch.id}`}
+              className="flex items-center justify-between p-3 rounded-lg bg-panel border border-border hover:border-accent/30 transition-colors group"
+            >
+              <div>
+                <p className="text-sm font-medium text-white group-hover:text-accent transition-colors">
+                  {ch.title}
+                </p>
+                <p className="text-xs text-muted mt-0.5">{ch.status} • {ch.skillSlug}</p>
+              </div>
+              <span className="text-muted group-hover:text-accent transition-colors">→</span>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {challenges.length === 0 && !isLeader && (
+        <p className="text-xs text-muted mb-3">No challenges yet.</p>
+      )}
+
+      {/* Create challenge (leader only) */}
+      {isLeader && (
+        <div className="bg-panel-2 border border-border rounded-lg p-3">
+          <p className="text-xs text-muted mb-2">Create a skill challenge for candidates:</p>
+          <div className="flex gap-2">
+            <select
+              value={selectedSkill}
+              onChange={(e) => setSelectedSkill(e.target.value)}
+              className="flex-1 rounded-lg bg-panel border border-border px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent"
+            >
+              <option value="">Select a skill...</option>
+              {needs.map((need) => (
+                <option key={need.slug} value={need.slug}>{need.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleCreate}
+              disabled={creating || !selectedSkill}
+              className="px-4 py-2 rounded-lg font-semibold text-sm bg-accent text-white hover:bg-accent-2 transition-colors disabled:opacity-50"
+            >
+              {creating ? '...' : 'Create'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

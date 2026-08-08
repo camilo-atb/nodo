@@ -52,11 +52,11 @@ export function GraphPanel() {
     const fg = graphRef.current;
     if (!fg) return;
     // Stronger repulsion to prevent overlapping
-    fg.d3Force('charge')?.strength(-350);
+    fg.d3Force('charge')?.strength(-500);
     // Larger collision radius so nodes don't stack
-    fg.d3Force('collide')?.radius(35);
+    fg.d3Force('collide')?.radius(45);
     // Longer link distance to spread things out
-    fg.d3Force('link')?.distance(80);
+    fg.d3Force('link')?.distance(100);
   }, [data]);
 
   // Build adjacency set for hover-highlight
@@ -108,8 +108,13 @@ export function GraphPanel() {
         case 'person':
           navigate(`/event/${eventId}/profile/${node.id}`);
           break;
+        case 'idea':
+          // Show info — no dedicated page yet. The tooltip on hover gives context.
+          // For now, keep the node highlighted (hover state persists on click)
+          setHoveredNode(node);
+          break;
         default:
-          console.log('Node clicked (no route):', node.id, node.kind, node.label);
+          break;
       }
     },
     [navigate],
@@ -199,7 +204,8 @@ export function GraphPanel() {
           ctx.fill();
         }}
         backgroundColor="#07080d"
-        cooldownTicks={200}
+        cooldownTicks={300}
+        warmupTicks={200}
         nodeId="id"
         linkSource="source"
         linkTarget="target"
@@ -274,7 +280,7 @@ function GraphLegend() {
           <span className="text-white/60">Skill</span>
         </LegendItem>
         <LegendItem>
-          <span className="inline-block w-3 h-3 rounded-full flex items-center justify-center text-[8px]" style={{ backgroundColor: '#a78bfa', color: '#fff' }}>✦</span>
+          <span className="inline-block w-3 h-3 rounded-full items-center justify-center text-[8px]" style={{ backgroundColor: '#a78bfa', color: '#fff' }}>✦</span>
           <span className="text-white/60">AI Agent</span>
         </LegendItem>
 

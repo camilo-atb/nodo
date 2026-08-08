@@ -206,6 +206,7 @@ export function OnboardingPage() {
         const mockToken = `mock_token_${Date.now()}`;
         const mockCode = Math.random().toString(36).slice(2, 8).toUpperCase();
         setSession(mockId, mockToken);
+        useSessionStore.getState().setProfile({ name: displayName.trim(), headline: headline.trim(), bio: bioRaw.trim() });
         setRecoveryCode(mockCode);
         setStep('recovery');
         setSubmitting(false);
@@ -213,6 +214,7 @@ export function OnboardingPage() {
       }
 
       setSession(res.person.id, res.sessionToken);
+      useSessionStore.getState().setProfile({ name: res.person.displayName, headline: res.person.headline ?? '', bio: res.person.bio ?? '' });
       setRecoveryCode(res.recoveryCode);
       setStep('recovery');
     } finally {

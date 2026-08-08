@@ -87,12 +87,12 @@ interface ChallengeInfo {
 }
 
 export function ChallengePage() {
-  const { challengeId: paramId } = useParams<{ challengeId: string }>();
+  const { challengeId: paramId, eventId: _eventId, teamId } = useParams<{ challengeId: string; eventId: string; teamId?: string }>();
   const store = useChallengeStore();
   const mockTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Subscribe to Portal channel
-  useChallengeChannel({ challengeId: paramId ?? null });
+  useChallengeChannel({ challengeId: paramId ?? null, teamId: teamId ?? null });
 
   // Fetch challenge info on mount
   useEffect(() => {

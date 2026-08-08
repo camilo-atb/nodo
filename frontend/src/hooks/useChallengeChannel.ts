@@ -21,10 +21,16 @@ interface ChallengeMessageContent {
 
 interface UseChallengeChannelProps {
   challengeId: string | null;
+  teamId?: string | null;
 }
 
-export function useChallengeChannel({ challengeId }: UseChallengeChannelProps) {
-  const channelId = challengeId ? `challenge-${challengeId}` : undefined;
+export function useChallengeChannel({ challengeId, teamId }: UseChallengeChannelProps) {
+  // Canal: challenge-{teamId}-{challengeId} (docs-backend/12)
+  const channelId = challengeId && teamId
+    ? `challenge-${teamId}-${challengeId}`
+    : challengeId
+      ? `challenge-${challengeId}`
+      : undefined;
 
   const { status } = useChannel<ChallengeMessageContent>({
     channelId,

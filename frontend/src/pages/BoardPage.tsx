@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
 import { useBoardStore } from '@/stores/boardStore';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -18,7 +18,7 @@ interface BoardResponse {
 }
 
 export function BoardPage() {
-  const { teamId } = useParams<{ eventId: string; teamId: string }>();
+  const { teamId, eventId } = useParams<{ eventId: string; teamId: string }>();
   const personId = useSessionStore((s) => s.personId);
   const [winnerMode, setWinnerMode] = useState(false);
 
@@ -111,10 +111,21 @@ export function BoardPage() {
     [teamId],
   );
 
+  const navigate = useNavigate();
+
   if (!teamId) return null;
 
   return (
     <div className="flex flex-col h-screen bg-bg">
+      {/* Back button */}
+      <div className="px-4 py-2 border-b border-border flex items-center">
+        <button
+          onClick={() => navigate(`/event/${eventId}/team/${teamId}`)}
+          className="text-xs text-muted hover:text-white transition-colors flex items-center gap-1"
+        >
+          ← Back to Team
+        </button>
+      </div>
       <BoardToolbar
         teamId={teamId}
         isLeader={isLeader}

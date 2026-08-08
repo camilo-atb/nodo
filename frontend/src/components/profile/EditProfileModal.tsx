@@ -9,12 +9,12 @@ interface EditProfileModalProps {
   onClose: () => void;
 }
 
-type Availability = 'open' | 'busy' | 'exploring';
+type Availability = 'full' | 'partial' | 'evenings';
 
 const AVAILABILITY_OPTIONS: { value: Availability; label: string }[] = [
-  { value: 'open', label: 'Open to collaborate' },
-  { value: 'busy', label: 'Busy' },
-  { value: 'exploring', label: 'Exploring' },
+  { value: 'full', label: 'Full-time' },
+  { value: 'partial', label: 'Partial' },
+  { value: 'evenings', label: 'Evenings only' },
 ];
 
 export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
@@ -26,7 +26,7 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
   const [headline, setHeadline] = useState('');
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
-  const [availability, setAvailability] = useState<Availability>('open');
+  const [availability, setAvailability] = useState<Availability>('full');
   const [saving, setSaving] = useState(false);
 
   // Sync form with profile on open
@@ -47,10 +47,10 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
       await apiFetch(`/v1/people/${personId}`, {
         method: 'PATCH',
         body: JSON.stringify({
-          displayName,
-          headline,
-          bio,
-          skills,
+          ...(displayName.trim() && { displayName: displayName.trim() }),
+          ...(headline.trim() && { headline: headline.trim() }),
+          ...(bio.trim() && { bioRaw: bio.trim() }),
+          ...(skills.length > 0 && { skills }),
           availability,
         }),
       });
