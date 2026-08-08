@@ -66,11 +66,10 @@ BOARD_MAX_NOTES=200
 BOARD_NOTE_MAX_CHARS=500
 
 # Reto (12) — ajustables sin desplegar
-QUIZ_QUESTION_COUNT=6
-QUIZ_QUESTION_SECONDS=20
-QUIZ_MAX_PARTICIPANTS=50
-QUIZ_RUN_TTL_MINUTES=60
-QUIZ_LOBBY_TIMEOUT_MINUTES=10
+CHALLENGE_QUESTION_COUNT=5
+CHALLENGE_DURATION_SEC=20
+CHALLENGE_MAX_PARTICIPANTS=50
+CHALLENGE_TTL_MINUTES=60
 
 # App
 SESSION_SECRET=...
@@ -82,7 +81,7 @@ Los parámetros de los tres agentes y de las dos superficies de tiempo real son 
 
 **`quizmaster` no añade credenciales.** Usa la misma `LLM_API_KEY`, `LLM_BASE_URL` y `LLM_MODEL` que el matchmaker: es un actor del dominio, no una cuenta ([12](12-live-quiz.md#quizmaster-es-un-actor-no-una-credencial)). Los cinco secretos del proyecto siguen siendo cinco.
 
-Dos topes no son gustos y no conviene subirlos sin releer el porqué: `QUIZ_MAX_PARTICIPANTS` y el recorte de `members` a 8 en los sobres salen ambos del límite de **2KB por mensaje** de Portal ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)). Pasado ese punto, Portal rechaza la publicación y el evento se pierde.
+Dos topes no son gustos y no conviene subirlos sin releer el porqué: `CHALLENGE_MAX_PARTICIPANTS` y el recorte de `members` a 8 en los sobres salen ambos del límite de **2KB por mensaje** de Portal ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)). Pasado ese punto, Portal rechaza la publicación y el evento se pierde.
 
 `.env.example` se versiona con las claves vacías. `.env` no se versiona nunca.
 

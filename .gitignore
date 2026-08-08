@@ -27,6 +27,14 @@ jwks.private.json
 # pnpm
 .pnpm-store/
 
+# Herramientas de IA — nada de esto es del proyecto
+.claude/
+.cursor/
+.aider*
+CLAUDE.md
+AGENTS.md
+.github/copilot-instructions.md
+
 # IDE
 .vscode/
 .idea/

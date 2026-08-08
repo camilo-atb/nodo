@@ -137,9 +137,20 @@ Runtime Node 22 + pnpm, idéntico en local y en producción. `db:local` es solo 
 |---|---|
 | Ensanchar el guardarraíl anti-bucle a `startsWith('agent:')` | sin esto, `quizmaster` se retroalimenta. Riesgo *fatal* de [07](07-architecture.md) |
 | Migración: `eventos`, `event_id`, `max_size` sin tope, tablas de 11 y 12 | todo lo demás depende del esquema |
-| Sembrar el espacio abierto por defecto | sin él, `POST /v1/teams` falla ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)) |
+| Sembrar el evento abierto por defecto | sin él, `POST /v1/teams` falla ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)) |
 | Ampliar `@nodo/contracts` — solo adiciones | el frontend lo importa en 19 archivos |
 | Alinear nombres con el frontend: `Event`, `Card`, `Challenge` | **ADR-015**, 02-05, 09, 11, 12 |
-| Calibrar `QUIZ_QUESTION_SECONDS` y `QUIZ_QUESTION_COUNT` con gente real | igual que el umbral del matchmaker: no se fija de forma teórica |
+| Calibrar `CHALLENGE_DURATION_SEC` y `CHALLENGE_QUESTION_COUNT` con gente real | igual que el umbral del matchmaker: no se fija de forma teórica |
 
-En el frontend, dos tareas menores: renombrar `eventStore`/`NodoEvent`/`EventPage` a `Event`, y usar `memberCount` en vez de `members.length`.
+### En el frontend
+
+Salieron de arrancar la aplicación contra el API real, no de leer el código. Las dos primeras **bloquean la integración**; las dos últimas son cosméticas.
+
+| Tarea | Por qué |
+|---|---|
+| `refetchSnapshot()` debe llamarse **al montar**, no solo ante huecos de `seq` | Hoy vive dentro de `usePortalChannel.ts` y solo se invoca en la detección de huecos, así que **el snapshot del grafo está acoplado a que Portal conecte**. Si el canal falla, la app se ve vacía aunque el API tenga datos. `GET /v1/graph` es público y sin autenticación por diseño: debería cargar siempre |
+| El canal del reto pasa a `challenge-{teamId}-{challengeId}` | `authz` corre dentro de Portal **sin base de datos** y no puede traducir un id de reto a un equipo. Una línea en `hooks/useChallengeChannel.ts` ([12](12-live-quiz.md)) |
+| Usar `memberCount` en vez de `members.length` | en sobres, `members` viaja acotado a 8 ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)) |
+| `VITE_API_URL` apunta a `:3000` en `.env.example` | el API escucha en `:8080` |
+
+El paso 3 del contrato de arranque de [03](03-portal-contract.md) —`GET /v1/graph`— es **independiente** del paso 4 —suscribirse—. El frontend los fusionó, y esa fusión es la que deja la pantalla en blanco cuando el tiempo real no está disponible.
