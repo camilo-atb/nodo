@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   real,
   text,
   timestamp,
@@ -278,3 +279,57 @@ export const channelWatermarks = pgTable('channel_watermarks', {
   seq: bigint('seq', { mode: 'number' }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ─── Tablero colaborativo (docs/11) ─────────────────────────────────────────
+
+/**
+ * `team_id` es `unique`: la relación 1:1 con el equipo se aplica en la base
+ * de datos, no en la capa de servicio (docs/02).
+ *
+ * `winner_card_id` vive aquí y no como columna de la tarjeta, para que solo
+ * pueda haber una ganadora **por construcción** en vez de por disciplina.
+ */
+export const boards = pgTable('boards', {
+  id: text('id').primaryKey(),
+  teamId: text('team_id')
+    .notNull()
+    .unique()
+    .references(() => teams.id, { onDelete: 'cascade' }),
+  winnerCardId: text('winner_card_id'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const boardCards = pgTable(
+  'board_cards',
+  {
+    id: text('id').primaryKey(),
+    boardId: text('board_id')
+      .notNull()
+      .references(() => boards.id, { onDelete: 'cascade' }),
+    content: text('content').notNull().default(''),
+    x: real('x').notNull(),
+    y: real('y').notNull(),
+    color: text('color').notNull().default('yellow'),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => people.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('board_cards_board_idx').on(t.boardId)],
+);
+
+/** Un voto por persona y tarjeta: el segundo `POST` no hace nada. */
+export const boardVotes = pgTable(
+  'board_votes',
+  {
+    cardId: text('card_id')
+      .notNull()
+      .references(() => boardCards.id, { onDelete: 'cascade' }),
+    personId: text('person_id')
+      .notNull()
+      .references(() => people.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.cardId, t.personId] })],
+);

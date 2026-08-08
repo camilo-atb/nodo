@@ -60,6 +60,9 @@ export const errors = {
       { slugs },
     ),
 
+  boardFull: () =>
+    new DomainError('BOARD_FULL', 'El tablero ya tiene el máximo de tarjetas.'),
+
   validation: (issues: unknown) =>
     new DomainError('VALIDATION_ERROR', 'Los datos enviados no son válidos.', { issues }),
 

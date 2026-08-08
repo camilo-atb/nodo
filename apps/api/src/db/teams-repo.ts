@@ -1,8 +1,9 @@
 import { edgeId, type NeedRef, type PersonRef, type TeamDTO, type TeamStatus } from '@nodo/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from './client.js';
-import { edges, nodes, people, teams } from './schema.js';
+import { boards, edges, nodes, people, teams } from './schema.js';
 import { deriveTeamStatus } from '../domain/state.js';
+import { boardId } from '../domain/ids.js';
 import { toNeedRef, toPersonRef, toTeamDTO, type TeamRow } from '../domain/mappers.js';
 
 const selectTeam = (db: Db) =>
@@ -119,6 +120,9 @@ export const createTeam = async (db: Db, input: CreateTeamInput): Promise<void> 
       eventId: input.eventId,
       maxSize: input.maxSize,
     });
+    // El tablero nace con el equipo, en la misma transacción (docs/11): un
+    // equipo sin tablero sería un estado que nadie sabe reparar.
+    await tx.insert(boards).values({ id: boardId(), teamId: input.id });
     await tx.insert(edges).values({
       id: edgeId('leads', input.leadId, input.id),
       kind: 'leads',

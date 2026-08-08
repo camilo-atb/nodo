@@ -25,6 +25,8 @@ export const SuggestionId = prefixedId('sug');
 export const DomainEventId = prefixedId('evt');
 /** Contenedor donde la gente se encuentra para construir (ADR-013). */
 export const EventId = prefixedId('ev');
+export const BoardId = prefixedId('brd');
+export const CardId = prefixedId('card');
 
 export type PersonId = z.infer<typeof PersonId>;
 export type TeamId = z.infer<typeof TeamId>;
@@ -33,6 +35,8 @@ export type ApplicationId = z.infer<typeof ApplicationId>;
 export type SuggestionId = z.infer<typeof SuggestionId>;
 export type DomainEventId = z.infer<typeof DomainEventId>;
 export type EventId = z.infer<typeof EventId>;
+export type BoardId = z.infer<typeof BoardId>;
+export type CardId = z.infer<typeof CardId>;
 
 /** Fechas: epoch en milisegundos. Nunca `Date` ni ISO string (docs/09). */
 export const EpochMs = z.number().int().nonnegative();

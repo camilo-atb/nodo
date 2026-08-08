@@ -39,6 +39,8 @@ export const applicationId = (): string => `app_${ulid()}`;
 export const suggestionId = (): string => `sug_${ulid()}`;
 /** Contenedor de ADR-013. Prefijo `ev_`, distinto del `evt_` de los sobres. */
 export const nodoEventId = (): string => `ev_${ulid()}`;
+export const boardId = (): string => `brd_${ulid()}`;
+export const cardId = (): string => `card_${ulid()}`;
 export const eventId = (): string => `evt_${ulid()}`;
 
 /** Credencial de sesión opaca. 256 bits, nunca sale en un DTO. */

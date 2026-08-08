@@ -3,6 +3,7 @@ import {
   AGENT_ID,
   edgeId,
   type ActorRef,
+  type BoardCard,
   type ApplicationDTO,
   type GraphPatch,
   type IdeaDTO,
@@ -344,4 +345,72 @@ export const teamNeedChanged = (
     icon: '🧩',
     refs: [{ kind: 'team', id: team.id, label: team.name }],
   },
+});
+
+// ─── Tablero (docs/11) ──────────────────────────────────────────────────────
+// Van por `team-{teamId}`, el canal que ya existe (ADR-015). Son `TeamEvent`,
+// así que `graph?: never` impide adjuntarles un parche en compilación.
+
+/** El sobre no lleva `myVote`: lo leen varias personas a la vez (docs/11). */
+const publicCard = ({ myVote: _mine, ...card }: BoardCard): BoardCard => card;
+
+export const boardCardCreated = (actor: ActorRef, card: BoardCard): TeamEvent => ({
+  ...base(actor),
+  type: 'board.card_created',
+  payload: { card: publicCard(card) },
+  summary: {
+    text: 'Nueva tarjeta en el tablero',
+    icon: '📝',
+    refs: [],
+  },
+});
+
+export const boardCardMoved = (
+  actor: ActorRef,
+  cardId: string,
+  x: number,
+  y: number,
+): TeamEvent => ({
+  ...base(actor),
+  type: 'board.card_moved',
+  payload: { cardId, x, y },
+  summary: { text: 'Una tarjeta cambió de sitio', icon: '↔️', refs: [] },
+});
+
+export const boardCardUpdated = (actor: ActorRef, cardId: string, content: string): TeamEvent => ({
+  ...base(actor),
+  type: 'board.card_updated',
+  payload: { cardId, content },
+  summary: { text: 'Una tarjeta cambió de texto', icon: '✏️', refs: [] },
+});
+
+export const boardVoteCast = (
+  actor: ActorRef,
+  cardId: string,
+  personId: string,
+  votes: number,
+): TeamEvent => ({
+  ...base(actor),
+  type: 'board.vote_cast',
+  payload: { cardId, personId, votes },
+  summary: { text: 'Alguien votó una tarjeta', icon: '👍', refs: [] },
+});
+
+export const boardVoteRemoved = (
+  actor: ActorRef,
+  cardId: string,
+  personId: string,
+  votes: number,
+): TeamEvent => ({
+  ...base(actor),
+  type: 'board.vote_removed',
+  payload: { cardId, personId, votes },
+  summary: { text: 'Alguien retiró su voto', icon: '↩️', refs: [] },
+});
+
+export const boardWinnerSelected = (actor: ActorRef, cardId: string): TeamEvent => ({
+  ...base(actor),
+  type: 'board.winner_selected',
+  payload: { cardId },
+  summary: { text: 'El equipo eligió una idea ganadora', icon: '🏆', refs: [] },
 });

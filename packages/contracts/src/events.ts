@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { BoardCard } from './board.js';
 import { ApplicationDTO, IdeaDTO, PersonDTO, SuggestionDTO, TeamDTO } from './dto.js';
 import { mainEnvelope, teamEnvelope, type NoGraph } from './envelope.js';
 import {
+  CardId,
   NeedRef,
   PersonId,
   PersonRef,
@@ -94,10 +96,57 @@ export const TeamNeedChanged = teamEnvelope(
   z.object({ teamId: TeamId, needs: z.array(NeedRef) }),
 );
 
+// ─── Tablero (docs/11) ──────────────────────────────────────────────────────
+// Van por el MISMO canal `team-{teamId}`, no por uno propio (ADR-015): su
+// `authz` ya está desplegado y ya distingue miembros de solicitantes, así que
+// el tablero no añade ni una línea a `portal.config.ts`.
+
+export const BoardCardCreated = teamEnvelope(
+  'board.card_created',
+  z.object({ card: BoardCard }),
+);
+
+/**
+ * `card_moved` y `card_updated` llevan solo el delta, no la tarjeta entera:
+ * son los dos mensajes de mayor frecuencia del canal y el `content` de Portal
+ * está limitado a 2KB.
+ */
+export const BoardCardMoved = teamEnvelope(
+  'board.card_moved',
+  z.object({ cardId: CardId, x: z.number(), y: z.number() }),
+);
+
+export const BoardCardUpdated = teamEnvelope(
+  'board.card_updated',
+  z.object({ cardId: CardId, content: z.string() }),
+);
+
+/** `votes` viaja ya agregado: reaplicar el mensaje no descuadra el contador. */
+export const BoardVoteCast = teamEnvelope(
+  'board.vote_cast',
+  z.object({ cardId: CardId, personId: PersonId, votes: z.number().int().nonnegative() }),
+);
+
+export const BoardVoteRemoved = teamEnvelope(
+  'board.vote_removed',
+  z.object({ cardId: CardId, personId: PersonId, votes: z.number().int().nonnegative() }),
+);
+
+export const BoardWinnerSelected = teamEnvelope(
+  'board.winner_selected',
+  z.object({ cardId: CardId }),
+);
+
 export const TeamEvent = z.discriminatedUnion('type', [
   ApplicationCreated,
   ApplicationResolved,
   TeamNeedChanged,
+  BoardCardCreated,
+  BoardCardMoved,
+  BoardCardUpdated,
+  BoardVoteCast,
+  BoardVoteRemoved,
+  BoardWinnerSelected,
 ]);
 export type TeamEvent = NoGraph<z.infer<typeof TeamEvent>>;
 

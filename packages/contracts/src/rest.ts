@@ -202,6 +202,8 @@ export const ErrorCode = z.enum([
   'UNKNOWN_SKILL',
   'VALIDATION_ERROR',
   'RATE_LIMITED',
+  // Tablero (docs/11)
+  'BOARD_FULL',
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 
@@ -225,6 +227,7 @@ export const HTTP_STATUS_BY_ERROR: Record<ErrorCode, number> = {
   UNKNOWN_SKILL: 422,
   VALIDATION_ERROR: 422,
   RATE_LIMITED: 429,
+  BOARD_FULL: 409,
 };
 
 // ─── Contenedor (ADR-013) ───────────────────────────────────────────────────

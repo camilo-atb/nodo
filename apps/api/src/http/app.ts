@@ -12,6 +12,7 @@ import { ideasRoutes } from './routes/ideas.js';
 import { peopleRoutes } from './routes/people.js';
 import { portalRoutes } from './routes/portal.js';
 import { sessionRoutes } from './routes/session.js';
+import { boardsRoutes } from './routes/boards.js';
 import { eventsRoutes } from './routes/events.js';
 import { skillsRoutes } from './routes/skills.js';
 import { teamsRoutes } from './routes/teams.js';
@@ -48,6 +49,7 @@ export const createApp = (ctx: AppContext) => {
   app.route('/', peopleRoutes(ctx));
   app.route('/', skillsRoutes(ctx));
   app.route('/', eventsRoutes(ctx));
+  app.route('/', boardsRoutes(ctx));
   app.route('/', ideasRoutes(ctx));
   app.route('/', teamsRoutes(ctx));
   app.route('/', applicationsRoutes(ctx));
