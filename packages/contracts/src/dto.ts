@@ -4,6 +4,8 @@ import {
   ApplicationStatus,
   Availability,
   EpochMs,
+  EventId,
+  EventKind,
   Handle,
   IdeaId,
   LanguageCode,
@@ -57,6 +59,8 @@ export const TeamDTO = z.object({
   members: z.array(PersonRef).min(1),
   memberCount: z.number().int().nonnegative(),
   needs: z.array(NeedRef),
+  /** Contenedor al que pertenece. Nunca nulo (ADR-013). */
+  eventId: EventId,
   ideaId: IdeaId.nullable(),
   /** Sin tope superior desde ADR-014: el 4 es el valor por defecto. */
   maxSize: z.number().int().min(1),
@@ -69,6 +73,8 @@ export const IdeaDTO = z.object({
   title: z.string().min(1),
   summary: z.string().nullable(),
   author: PersonRef,
+  /** Contenedor al que pertenece. Nunca nulo (ADR-013). */
+  eventId: EventId,
   /** Arista `SPAWNED`, si la idea ya derivó en equipo. */
   teamId: TeamId.nullable(),
   interestedCount: z.number().int().nonnegative(),
@@ -115,3 +121,29 @@ export const SuggestionDTO = z.object({
   createdAt: EpochMs,
 });
 export type SuggestionDTO = z.infer<typeof SuggestionDTO>;
+
+/**
+ * Contenedor donde la gente se encuentra para construir (ADR-013).
+ *
+ * **No es un nodo del grafo.** `NodeKind` no gana valores: el frontend
+ * construye `Record<NodeKind, …>` exhaustivos y añadir uno rompe su
+ * compilación. El evento viaja como `eventId` en `GraphNode.meta` y actúa
+ * como dimensión de filtro, no como ámbito de canal: `network-main` sigue
+ * siendo un solo canal para toda la red.
+ *
+ * Las fechas son nulables porque un `project` no las tiene; un `hackathon`
+ * sí. Ese par de nulos en una tabla que casi nadie consulta es más barato que
+ * un nulo en la clave foránea que consulta todo el mundo.
+ */
+export const EventDTO = z.object({
+  id: EventId,
+  name: z.string().min(1),
+  description: z.string().nullable(),
+  kind: EventKind,
+  tags: z.array(z.string().min(1)),
+  startsAt: EpochMs.nullable(),
+  endsAt: EpochMs.nullable(),
+  participantCount: z.number().int().nonnegative(),
+  createdAt: EpochMs,
+});
+export type EventDTO = z.infer<typeof EventDTO>;

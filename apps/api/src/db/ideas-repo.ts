@@ -11,6 +11,7 @@ const selectIdea = (db: Db) =>
       title: ideas.title,
       summary: ideas.summary,
       authorId: ideas.authorId,
+      eventId: ideas.eventId,
       createdAt: ideas.createdAt,
     })
     .from(ideas);
@@ -46,15 +47,26 @@ export const listIdeas = async (db: Db): Promise<IdeaDTO[]> => {
 
 export const createIdea = async (
   db: Db,
-  input: { id: string; title: string; summary: string | null; authorId: string },
+  input: {
+    id: string;
+    title: string;
+    summary: string | null;
+    authorId: string;
+    eventId: string;
+  },
 ): Promise<void> => {
   await db.transaction(async (tx) => {
-    await tx.insert(nodes).values({ id: input.id, kind: 'idea', label: input.title, meta: {} });
+    // `eventId` en el meta: `Event` no es un NodeKind (ADR-013), y es por
+    // donde el cliente filtra el grafo.
+    await tx
+      .insert(nodes)
+      .values({ id: input.id, kind: 'idea', label: input.title, meta: { eventId: input.eventId } });
     await tx.insert(ideas).values({
       id: input.id,
       title: input.title,
       summary: input.summary,
       authorId: input.authorId,
+      eventId: input.eventId,
     });
     await tx.insert(edges).values({
       id: edgeId('authored', input.authorId, input.id),

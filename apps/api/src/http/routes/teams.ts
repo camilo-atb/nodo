@@ -1,5 +1,6 @@
 import {
   CreateTeamRequest,
+  DEFAULT_EVENT_ID,
   DEFAULT_TEAM_SIZE,
   ReplaceNeedsRequest,
   TeamStatus,
@@ -55,6 +56,7 @@ export const teamsRoutes = (ctx: AppContext) => {
       pitch: input.pitch ?? null,
       leadId: auth.personId,
       ideaId: input.ideaId ?? null,
+      eventId: input.eventId ?? DEFAULT_EVENT_ID,
       maxSize: input.maxSize ?? DEFAULT_TEAM_SIZE,
       needs,
     });

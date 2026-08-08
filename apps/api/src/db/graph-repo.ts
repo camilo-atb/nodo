@@ -8,8 +8,37 @@ import { edges, nodes, channelWatermarks } from './schema.js';
  * `edges` ya tienen la forma de `GraphNode`/`GraphEdge`; el único trabajo es
  * convertir la marca de tiempo a epoch ms.
  */
+/**
+ * Acota un snapshot a un contenedor (ADR-013).
+ *
+ * `Event` no es un `NodeKind`, así que el filtro va por el `eventId` del
+ * `meta` y **en memoria**: el grafo entero cabe en pocos cientos de KB, y
+ * hacerlo en SQL obligaría a indexar dentro del `jsonb` para ahorrar una
+ * operación que ya es de milisegundos.
+ *
+ * Los nodos **sin** `eventId` —personas, skills, el agente— nunca se filtran:
+ * no pertenecen a ningún contenedor, participan en todos. Y las aristas se
+ * recortan a las que siguen teniendo sus dos extremos visibles, o el cliente
+ * recibiría aristas colgando de nodos que no le llegaron.
+ */
+export const filterByEvent = (
+  graph: { nodes: GraphNode[]; edges: GraphEdge[] },
+  eventId?: string,
+): { nodes: GraphNode[]; edges: GraphEdge[] } => {
+  if (!eventId) return graph;
+
+  const nodes = graph.nodes.filter((n) => {
+    const owner = n.meta?.['eventId'];
+    return owner === undefined || owner === eventId;
+  });
+  const visible = new Set(nodes.map((n) => n.id));
+
+  return { nodes, edges: graph.edges.filter((e) => visible.has(e.from) && visible.has(e.to)) };
+};
+
 export const getGraphSnapshot = async (
   db: Db,
+  eventId?: string,
 ): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> => {
   const nodeRows = await db
     .select({ id: nodes.id, kind: nodes.kind, label: nodes.label, status: nodes.status, meta: nodes.meta })
@@ -29,7 +58,7 @@ export const getGraphSnapshot = async (
     .from(edges)
     .where(or(isNull(edges.expiresAt), gt(edges.expiresAt, sql`now()`)));
 
-  return {
+  const all = {
     nodes: nodeRows.map((n) => ({
       id: n.id,
       kind: n.kind,
@@ -48,6 +77,8 @@ export const getGraphSnapshot = async (
       meta: (e.meta as Record<string, unknown>) ?? undefined,
     })),
   };
+
+  return filterByEvent(all, eventId);
 };
 
 /**

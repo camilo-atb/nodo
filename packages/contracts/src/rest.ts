@@ -1,8 +1,11 @@
 import { z } from 'zod';
-import { ApplicationDTO, IdeaDTO, PersonDTO, TeamDTO } from './dto.js';
+import { ApplicationDTO, EventDTO, IdeaDTO, PersonDTO, TeamDTO } from './dto.js';
 import { GraphEdge, GraphNode } from './graph.js';
 import {
   Availability,
+  EpochMs,
+  EventId,
+  EventKind,
   Handle,
   IdeaId,
   LanguageCode,
@@ -63,16 +66,24 @@ export const ExtractSkillsRequest = z.object({
 });
 export type ExtractSkillsRequest = z.infer<typeof ExtractSkillsRequest>;
 
+/**
+ * `eventId` es **opcional** a propósito (ADR-013): si falta, la idea cae en el
+ * evento abierto que siembra `db:seed`. Es lo que permite que la columna sea
+ * `NOT NULL` sin romper a ningún cliente que ya llamaba a esta ruta.
+ */
 export const CreateIdeaRequest = z.object({
   title: z.string().min(1),
   summary: z.string().nullish(),
+  eventId: EventId.optional(),
 });
 export type CreateIdeaRequest = z.infer<typeof CreateIdeaRequest>;
 
+/** `eventId` opcional, con el mismo motivo que en `CreateIdeaRequest`. */
 export const CreateTeamRequest = z.object({
   name: z.string().min(1),
   pitch: z.string().nullish(),
   ideaId: IdeaId.nullish(),
+  eventId: EventId.optional(),
   needs: z.array(NeedInput).default([]),
   maxSize: z.number().int().min(1).optional(),
 });
@@ -215,3 +226,18 @@ export const HTTP_STATUS_BY_ERROR: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 422,
   RATE_LIMITED: 429,
 };
+
+// ─── Contenedor (ADR-013) ───────────────────────────────────────────────────
+
+export const CreateEventRequest = z.object({
+  name: z.string().min(1),
+  description: z.string().nullish(),
+  kind: EventKind,
+  tags: z.array(z.string().min(1)).default([]),
+  startsAt: EpochMs.nullish(),
+  endsAt: EpochMs.nullish(),
+});
+export type CreateEventRequest = z.infer<typeof CreateEventRequest>;
+
+export const EventsResponse = z.object({ events: z.array(EventDTO) });
+export type EventsResponse = z.infer<typeof EventsResponse>;

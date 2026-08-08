@@ -13,6 +13,7 @@ const selectTeam = (db: Db) =>
       pitch: teams.pitch,
       leadId: teams.leadId,
       ideaId: teams.ideaId,
+      eventId: teams.eventId,
       maxSize: teams.maxSize,
       frozen: teams.frozen,
       createdAt: teams.createdAt,
@@ -87,6 +88,7 @@ export type CreateTeamInput = {
   pitch: string | null;
   leadId: string;
   ideaId: string | null;
+  eventId: string;
   maxSize: number;
   needs: NeedRef[];
 };
@@ -104,7 +106,9 @@ export const createTeam = async (db: Db, input: CreateTeamInput): Promise<void> 
       kind: 'team',
       label: input.name,
       status,
-      meta: { maxSize: input.maxSize },
+      // `eventId` viaja en el meta del nodo porque `Event` no es un NodeKind
+      // (ADR-013): es la dimensión por la que el cliente filtra el grafo.
+      meta: { maxSize: input.maxSize, eventId: input.eventId, memberCount: 1 },
     });
     await tx.insert(teams).values({
       id: input.id,
@@ -112,6 +116,7 @@ export const createTeam = async (db: Db, input: CreateTeamInput): Promise<void> 
       pitch: input.pitch,
       leadId: input.leadId,
       ideaId: input.ideaId,
+      eventId: input.eventId,
       maxSize: input.maxSize,
     });
     await tx.insert(edges).values({

@@ -1,4 +1,4 @@
-import { CreateIdeaRequest, type IdeaResponse, type IdeasResponse } from '@nodo/contracts';
+import { DEFAULT_EVENT_ID, CreateIdeaRequest, type IdeaResponse, type IdeasResponse } from '@nodo/contracts';
 import { createIdea, listIdeas, loadIdeaDTO, toggleInterest } from '../../db/ideas-repo.js';
 import { errors } from '../../domain/errors.js';
 import { ideaPublished } from '../../domain/envelopes.js';
@@ -21,6 +21,7 @@ export const ideasRoutes = (ctx: AppContext) => {
       title: parsed.data.title,
       summary: parsed.data.summary ?? null,
       authorId: auth.personId,
+      eventId: parsed.data.eventId ?? DEFAULT_EVENT_ID,
     });
 
     const idea = (await loadIdeaDTO(ctx.db, id))!;

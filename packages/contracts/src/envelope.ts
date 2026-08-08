@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GraphPatch, NodeKind } from './graph.js';
-import { EpochMs, EventId, Handle, PersonId } from './primitives.js';
+import { DomainEventId, EpochMs, Handle, PersonId } from './primitives.js';
 
 /**
  * Los agentes son nodos de primera clase del grafo, no funciones anónimas.
@@ -64,7 +64,7 @@ const baseEnvelope = <T extends string, P extends z.ZodType>(type: T, payload: P
     v: z.literal(1),
     type: z.literal(type),
     /** Id del evento de dominio. Clave de idempotencia. */
-    id: EventId,
+    id: DomainEventId,
     /** Epoch ms del servidor. */
     at: EpochMs,
     actor: ActorRef,

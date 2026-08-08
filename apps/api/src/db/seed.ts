@@ -6,7 +6,8 @@ import { createPerson } from './people-repo.js';
 import { addMember, createTeam, deriveAndPersistTeamStatus } from './teams-repo.js';
 import { createIdea } from './ideas-repo.js';
 import { personId, recoveryCode, sessionToken, teamId, ideaId } from '../domain/ids.js';
-import type { SkillRef } from '@nodo/contracts';
+import { DEFAULT_EVENT_ID, type SkillRef } from '@nodo/contracts';
+import { events } from './schema.js';
 
 /**
  * `pnpm db:seed` (docs/08). Dos conjuntos con propósitos distintos:
@@ -139,6 +140,7 @@ const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Pro
     title: 'Health AI',
     summary: 'Asistente de triaje para clínicas rurales.',
     authorId: laura,
+    eventId: DEFAULT_EVENT_ID,
   });
 
   // recruiting: 1/4, needs sin cubrir.
@@ -148,6 +150,7 @@ const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Pro
     pitch: 'Asistente de triaje para clínicas rurales.',
     leadId: laura,
     ideaId: healthIdea,
+    eventId: DEFAULT_EVENT_ID,
     maxSize: 4,
     needs: [
       { ...skill('go'), priority: 'required' },
@@ -163,6 +166,7 @@ const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Pro
     pitch: 'Herramienta de crecimiento para founders early-stage.',
     leadId: nadia,
     ideaId: null,
+    eventId: DEFAULT_EVENT_ID,
     maxSize: 4,
     needs: [{ ...skill('growth'), priority: 'required' }],
   });
@@ -178,11 +182,34 @@ const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Pro
   console.log('[seed] conjunto representativo: 6 personas, 1 idea, 2 equipos.');
 };
 
+/**
+ * Evento abierto por defecto (ADR-013). **Obligatorio en cualquier entorno**,
+ * como el vocabulario: `teams.event_id` e `ideas.event_id` son `NOT NULL` y
+ * `eventId` es opcional en los payloads de creación, así que sin esta fila
+ * `POST /v1/teams` falla con violación de clave foránea.
+ */
+const seedDefaultEvent = async (db: ReturnType<typeof createDb>['db']): Promise<void> => {
+  await db
+    .insert(events)
+    .values({
+      id: DEFAULT_EVENT_ID,
+      name: 'Proyectos abiertos',
+      description: 'Contenedor por defecto para todo lo que no pertenece a un hackathon.',
+      kind: 'project',
+      tags: [],
+      startsAt: null,
+      endsAt: null,
+    })
+    .onConflictDoNothing();
+  console.log('[seed] evento abierto por defecto.');
+};
+
 const main = async (): Promise<void> => {
   const env = loadEnv();
   const { sql, db } = createDb(env.DATABASE_URL, { max: 1 });
 
   await seedVocabulary(db);
+  await seedDefaultEvent(db);
   if (env.NODE_ENV !== 'production') {
     await seedRepresentativeSet(db);
   }

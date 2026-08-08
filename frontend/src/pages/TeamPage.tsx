@@ -104,6 +104,9 @@ export function TeamPage() {
               // sobre viaja acotado a 8. `memberCount` es el censo real.
               memberCount: (teamNode.meta?.['memberCount'] as number) ?? Math.max(members.length, 1),
               needs,
+              // El contenedor viaja en el meta del nodo: `Event` no es un
+              // NodeKind (ADR-013), es la dimensión por la que se filtra.
+              eventId: (teamNode.meta?.['eventId'] as string) ?? 'ev_open',
               ideaId: (teamNode.meta?.['ideaId'] as string) ?? null,
               maxSize: (teamNode.meta?.['maxSize'] as number) ?? 4,
               createdAt: Date.now(),

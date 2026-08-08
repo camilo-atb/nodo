@@ -15,7 +15,9 @@ export const graphRoutes = (ctx: AppContext) => {
 
   router.get('/v1/graph', async (c) => {
     const seq = await getMainWatermark(ctx.db);
-    const { nodes, edges } = await getGraphSnapshot(ctx.db);
+    // `?eventId=` acota el snapshot a un contenedor (ADR-013). Sin él devuelve
+    // la red entera, que es lo que hacía antes de que `Event` existiera.
+    const { nodes, edges } = await getGraphSnapshot(ctx.db, c.req.query('eventId'));
     const body: GraphSnapshot = { nodes, edges, seq };
     return c.json(body);
   });

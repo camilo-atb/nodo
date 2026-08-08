@@ -65,6 +65,7 @@ export type TeamRow = {
   name: string;
   pitch: string | null;
   ideaId: string | null;
+  eventId: string;
   maxSize: number;
   createdAt: Date;
 };
@@ -84,6 +85,7 @@ export const toTeamDTO = (
   members,
   memberCount: members.length,
   needs,
+  eventId: row.eventId,
   ideaId: row.ideaId,
   maxSize: row.maxSize,
   createdAt: epoch(row.createdAt),
@@ -109,6 +111,7 @@ export type IdeaRow = {
   id: string;
   title: string;
   summary: string | null;
+  eventId: string;
   createdAt: Date;
 };
 
@@ -122,6 +125,7 @@ export const toIdeaDTO = (
   title: row.title,
   summary: row.summary,
   author,
+  eventId: row.eventId,
   teamId,
   interestedCount,
   createdAt: epoch(row.createdAt),

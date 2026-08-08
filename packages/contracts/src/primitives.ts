@@ -22,13 +22,16 @@ export const TeamId = prefixedId('tm');
 export const IdeaId = prefixedId('idea');
 export const ApplicationId = prefixedId('app');
 export const SuggestionId = prefixedId('sug');
-export const EventId = prefixedId('evt');
+export const DomainEventId = prefixedId('evt');
+/** Contenedor donde la gente se encuentra para construir (ADR-013). */
+export const EventId = prefixedId('ev');
 
 export type PersonId = z.infer<typeof PersonId>;
 export type TeamId = z.infer<typeof TeamId>;
 export type IdeaId = z.infer<typeof IdeaId>;
 export type ApplicationId = z.infer<typeof ApplicationId>;
 export type SuggestionId = z.infer<typeof SuggestionId>;
+export type DomainEventId = z.infer<typeof DomainEventId>;
 export type EventId = z.infer<typeof EventId>;
 
 /** Fechas: epoch en milisegundos. Nunca `Date` ni ISO string (docs/09). */
@@ -82,6 +85,25 @@ export type SuggestionDirection = z.infer<typeof SuggestionDirection>;
 
 export const NeedPriority = z.enum(['required', 'nice']);
 export type NeedPriority = z.infer<typeof NeedPriority>;
+
+/**
+ * Qué clase de contenedor es (ADR-013).
+ *
+ * `hackathon` está acotado en el tiempo y varios equipos compiten;
+ * `project` es abierto y la gente colabora. De aquí deriva la interfaz su
+ * modo de experiencia, así que no se guarda por separado.
+ */
+export const EventKind = z.enum(['hackathon', 'project']);
+export type EventKind = z.infer<typeof EventKind>;
+
+/**
+ * Id del evento abierto por defecto, sembrado por `db:seed`.
+ *
+ * Es lo que permite que `teams.event_id` e `ideas.event_id` sean `NOT NULL`
+ * **sin romper a ningún cliente existente**: `eventId` entra como campo
+ * opcional en los payloads de creación y, si falta, la fila cae aquí.
+ */
+export const DEFAULT_EVENT_ID = 'ev_open';
 
 /**
  * Tamaño de equipo **por defecto**, no un tope (ADR-014).

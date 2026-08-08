@@ -142,6 +142,27 @@ export const people = pgTable(
   ],
 );
 
+// ─── Contenedor (ADR-013) ───────────────────────────────────────────────────
+
+/**
+ * `events` no participa en el grafo: es una dimensión de filtro, no un nodo.
+ * Las fechas son nulables porque un `project` no las tiene.
+ */
+export const events = pgTable(
+  'events',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    description: text('description'),
+    kind: text('kind').notNull(),
+    tags: text('tags').array().notNull().default(sql`'{}'::text[]`),
+    startsAt: timestamp('starts_at', { withTimezone: true }),
+    endsAt: timestamp('ends_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check('events_kind_check', sql`${t.kind} in ('hackathon','project')`)],
+);
+
 export const ideas = pgTable('ideas', {
   id: text('id')
     .primaryKey()
@@ -151,6 +172,9 @@ export const ideas = pgTable('ideas', {
   authorId: text('author_id')
     .notNull()
     .references(() => people.id),
+  eventId: text('event_id')
+    .notNull()
+    .references(() => events.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -166,6 +190,9 @@ export const teams = pgTable(
       .notNull()
       .references(() => people.id),
     ideaId: text('idea_id').references(() => ideas.id),
+    eventId: text('event_id')
+      .notNull()
+      .references(() => events.id),
     maxSize: integer('max_size').notNull().default(4),
     /** El estado `building`: el líder congeló el reclutamiento. */
     frozen: boolean('frozen').notNull().default(false),
@@ -174,7 +201,10 @@ export const teams = pgTable(
   // Sin tope superior (ADR-014): un proyecto de código abierto necesita más
     // de cuatro. El recorte de `members` en los sobres es lo que respeta el
     // límite de 2KB de Portal, no un tope al equipo.
-    (t) => [check('teams_max_size_check', sql`${t.maxSize} >= 1`)],
+    (t) => [
+      check('teams_max_size_check', sql`${t.maxSize} >= 1`),
+      index('teams_event_idx').on(t.eventId),
+    ],
 );
 
 export const suggestions = pgTable(

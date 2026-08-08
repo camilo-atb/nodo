@@ -97,6 +97,7 @@ describe('TeamDTO', () => {
     members: [{ id: 'per_laura', handle: 'laura', displayName: 'Laura' }],
     memberCount: 1,
     needs: [{ slug: 'go', label: 'Go', category: 'backend', priority: 'required' }],
+    eventId: 'ev_open',
     ideaId: null,
     maxSize: 4,
     createdAt: 1754600000000,
