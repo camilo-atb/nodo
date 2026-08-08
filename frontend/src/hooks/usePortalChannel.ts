@@ -77,24 +77,28 @@ export function usePortalChannel() {
     },
   });
 
-  // Sync connection status
-  if (status) {
-    const validStatuses = ['idle', 'connecting', 'ready', 'reconnecting', 'degraded', 'degraded-http', 'blocked'] as const;
-    type ConnectionStatus = (typeof validStatuses)[number];
-    if (validStatuses.includes(status as ConnectionStatus)) {
-      useGraphStore.getState().setConnectionStatus(status as ConnectionStatus);
+  // Sync connection status (in effect, not during render)
+  useEffect(() => {
+    if (status) {
+      const validStatuses = ['idle', 'connecting', 'ready', 'reconnecting', 'degraded', 'degraded-http', 'blocked'] as const;
+      type ConnectionStatus = (typeof validStatuses)[number];
+      if (validStatuses.includes(status as ConnectionStatus)) {
+        useGraphStore.getState().setConnectionStatus(status as ConnectionStatus);
+      }
     }
-  }
+  }, [status]);
 
-  // Sync presence
-  if (presence) {
-    if ('participants' in presence && Array.isArray((presence as { participants?: unknown }).participants)) {
-      const ids = ((presence as { participants: { id: string }[] }).participants).map((p) => p.id);
-      usePresenceStore.getState().replaceAll(ids);
-    } else if ('count' in presence && typeof (presence as { count?: unknown }).count === 'number') {
-      usePresenceStore.getState().setAggregate((presence as { count: number }).count);
+  // Sync presence (in effect, not during render)
+  useEffect(() => {
+    if (presence) {
+      if ('participants' in presence && Array.isArray((presence as { participants?: unknown }).participants)) {
+        const ids = ((presence as { participants: { id: string }[] }).participants).map((p) => p.id);
+        usePresenceStore.getState().replaceAll(ids);
+      } else if ('count' in presence && typeof (presence as { count?: unknown }).count === 'number') {
+        usePresenceStore.getState().setAggregate((presence as { count: number }).count);
+      }
     }
-  }
+  }, [presence]);
 
   return { status, presence };
 }
