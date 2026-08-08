@@ -30,7 +30,7 @@ Del 11 en adelante están organizados **por superficie**: cada uno es un feature
 | # | Documento | Qué fija |
 |---|---|---|
 | 11 | [Tablero colaborativo](11-collab-board.md) | Notas, votos y cursores en vivo. El reparto entre lo efímero y lo durable. |
-| 12 | [Reto en vivo](12-live-quiz.md) | Quiz sincrónico para elegir entre solicitantes. `quizmaster` y el plazo como dato. |
+| 12 | [Skill Challenge](12-live-quiz.md) | Reto sincrónico para elegir entre solicitantes. `quizmaster` y el plazo como dato. |
 
 **Por qué dos formas de organizar.** Los features nuevos cruzan las diez preocupaciones a la vez; repartirlos en cinco documentos los volvería ilegibles. Pero los tipos, canales, tablas y rutas **sí** se insertan en 02/03/04/05/09, porque esos documentos se autodeclaran la referencia única y el frontend depende de ellos. Los documentos 11 y 12 llevan el diseño y el porqué; los contratos viven donde ya vivían sus hermanos.
 
@@ -78,9 +78,9 @@ Diseño de [11](11-collab-board.md) y [12](12-live-quiz.md), y las correcciones 
 
 | Qué se resolvió | Dónde |
 |---|---|
-| Los clientes publican señales efímeras en `board-*`, acotadas por `onPublish`. `publish: false` sigue vigente en el resto | **ADR-011**, 03, 11 |
+| El tablero reutiliza `team-{teamId}` y ningún cliente publica: `publish: false` sigue siendo universal | **ADR-015**, 03, 11 |
 | El plazo del reto es un dato, no un temporizador — las *extensions* de Portal no tienen alarmas ni handler que las despierte | **ADR-012**, 12 |
-| `Space` es contenedor obligatorio, con espacio abierto por defecto para no romper `POST /v1/teams` | **ADR-013**, 02, 04, 05, 09 |
+| `Event` es contenedor obligatorio, con espacio abierto por defecto para no romper `POST /v1/teams` | **ADR-013**, 02, 04, 05, 09 |
 | `max_size` pierde el tope de 4; `members` en el sobre se acota a 8 y `memberCount` pasa a ser la verdad | **ADR-014**, 02, 04, 09 |
 | El guardarraíl anti-bucle comparaba `senderId === 'agent:matchmaker'` y **dejaría pasar a `quizmaster`**. Pasa a `startsWith('agent:')` | 05, 07, 09, 12 |
 | `ActorRef.id` era un literal `'matchmaker'`; se ensancha a unión con `quizmaster` | 03, 09 |
@@ -92,7 +92,7 @@ Diseño de [11](11-collab-board.md) y [12](12-live-quiz.md), y las correcciones 
 
 La consecuencia de ADR-004 sigue diciendo `senderId === 'agent:matchmaker'`. **No se edita**, por la misma regla que dejó intacto el ejemplo de ADR-008: la versión vigente es la del guardarraíl 8 de [06](06-matchmaker-agent.md) y la de [12](12-live-quiz.md).
 
-Dos tareas de seguimiento quedan **en el frontend**, no aquí: renombrar `eventStore`/`NodoEvent`/`EventPage` a `Space`, y leer `memberCount` en lugar de `members.length` para el contador de integrantes.
+Dos tareas de seguimiento quedan **en el frontend**, no aquí: renombrar `eventStore`/`NodoEvent`/`EventPage` a `Event`, y leer `memberCount` en lugar de `members.length` para el contador de integrantes.
 
 ## Principio rector
 
@@ -136,10 +136,10 @@ Runtime Node 22 + pnpm, idéntico en local y en producción. `db:local` es solo 
 | Tarea | Por qué va primero |
 |---|---|
 | Ensanchar el guardarraíl anti-bucle a `startsWith('agent:')` | sin esto, `quizmaster` se retroalimenta. Riesgo *fatal* de [07](07-architecture.md) |
-| Migración: `spaces`, `space_id`, `max_size` sin tope, tablas de 11 y 12 | todo lo demás depende del esquema |
+| Migración: `eventos`, `event_id`, `max_size` sin tope, tablas de 11 y 12 | todo lo demás depende del esquema |
 | Sembrar el espacio abierto por defecto | sin él, `POST /v1/teams` falla ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)) |
 | Ampliar `@nodo/contracts` — solo adiciones | el frontend lo importa en 19 archivos |
-| `onPublish` en `board-*` | `publish: true` sin middleware es un agujero. Riesgo *fatal* |
+| Alinear nombres con el frontend: `Event`, `Card`, `Challenge` | **ADR-015**, 02-05, 09, 11, 12 |
 | Calibrar `QUIZ_QUESTION_SECONDS` y `QUIZ_QUESTION_COUNT` con gente real | igual que el umbral del matchmaker: no se fija de forma teórica |
 
-En el frontend, dos tareas menores: renombrar `eventStore`/`NodoEvent`/`EventPage` a `Space`, y usar `memberCount` en vez de `members.length`.
+En el frontend, dos tareas menores: renombrar `eventStore`/`NodoEvent`/`EventPage` a `Event`, y usar `memberCount` en vez de `members.length`.

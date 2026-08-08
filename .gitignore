@@ -5,10 +5,27 @@ node_modules/
 dist/
 build/
 
-# Environment variables
+# Environment variables — .env.example sí se versiona
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
+
+# Claves — nunca se versionan
+*.pem
+*.key
+jwks.private.json
+
+# Portal CLI
+.portal/
+
+# Postgres local de desarrollo (pglite), ver apps/api/scripts/dev-postgres.ts
+.pglite-data/
+.pglite-data.corrupted-*/
+
+# pnpm
+.pnpm-store/
 
 # IDE
 .vscode/

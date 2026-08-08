@@ -86,7 +86,7 @@ Sin ella, «ejecutar el matchmaker de forma síncrona» obligaría a esperar los
 | **AC-10** mismo plazo para todos | servicio | tres entries, un `question_opened` capturado, mismo `questionEndsAt`; una respuesta con el reloj adelantado devuelve `ANSWER_TOO_LATE` |
 | **AC-11** la respuesta correcta no se filtra | contrato + servicio | el esquema Zod de `QuestionDTO` no admite `correctIndex`; y se afirma sobre el sobre completo capturado |
 | **AC-12** un redespliegue no mata la partida | datos + servicio | reconstruir el servicio desde cero contra la misma base y comprobar que `advance` continúa por donde iba |
-| **AC-13** el ranking ordena, no decide | servicio | tras `quiz.ended`, ninguna `Application` cambió de `status` y la bandeja sale ordenada por `quizScore` |
+| **AC-13** el ranking ordena, no decide | servicio | tras `challenge.ended`, ninguna `Application` cambió de `status` y la bandeja sale ordenada por `challengeScore` |
 
 La aserción de AC-05 sobre el doble vacío es la que protege la regla `commit → publish` de [05](05-rest-api.md): si un handler publica antes de la transacción, esa prueba falla y ninguna otra lo haría.
 

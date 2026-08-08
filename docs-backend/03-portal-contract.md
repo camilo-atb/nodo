@@ -17,13 +17,14 @@
 |---|---|---|---|
 | `network-main` | persistente | backend + agentes | todos |
 | `team-{teamId}` | persistente | backend | miembros + solicitantes |
-| `board-{teamId}` | persistente | backend (estado) **+ clientes** (solo efímeros) | miembros |
-| `quiz-{teamId}-{runId}` | persistente, `mode: 'broadcast'` | backend | miembros + solicitantes |
+| `challenge-{teamId}-{challengeId}` | persistente, `mode: 'broadcast'` | backend | miembros + solicitantes |
 | *inbox* (nativo de Portal) | persistente | backend + agentes | destinatario |
 
-**Los dos canales nuevos llevan el `teamId` en su id por obligación, no por estética.** `authz` corre dentro de Portal **sin acceso a la base de datos**: solo puede leer `ctx.channel.id` y el claim `teams`. Un canal llamado `board-{boardId}` o `quiz-{runId}` sería imposible de autorizar, porque nadie ahí dentro puede traducir ese id a un equipo.
+**El tablero no tiene canal propio: reutiliza `team-{teamId}`** ([ADR-015](01-decisions.md#adr-015--el-contrato-se-alinea-con-el-frontend-ya-implementado)). Su `authz` ya está desplegado y ya distingue miembros de solicitantes, así que el tablero no añade ni una línea de configuración. Los seis sobres `board.*` van por ahí ([11](11-collab-board.md)).
 
-`board-*` es el único canal donde un cliente publica, y solo señales efímeras de una lista blanca ([ADR-011](01-decisions.md#adr-011--los-clientes-publican-señales-efímeras-en-el-canal-del-tablero)). Su diseño está en [11](11-collab-board.md); el del reto, en [12](12-live-quiz.md).
+**El canal del reto lleva el `teamId` dentro por obligación, no por estética.** `authz` corre dentro de Portal **sin acceso a la base de datos**: solo puede leer `ctx.channel.id` y el claim `teams`. Un canal llamado `challenge-{challengeId}` sería imposible de autorizar, porque nadie ahí dentro puede traducir ese id a un equipo ([12](12-live-quiz.md)).
+
+**Ningún cliente publica, en ningún canal.** `publish: false` es universal: el tablero escribe su estado por REST y el reto envía las respuestas por REST.
 
 **Presence vive en `network-main`.** Es la única fuente de "quién está en línea". Recordatorio: presence es **exclusivamente websocket**; el backend no puede leerlo. Cualquier lógica de servidor que dependa de presence está mal planteada.
 
@@ -199,7 +200,7 @@ El frontend usa `useInbox`, que ya trae `items`, `unseen`, `markAllRead()`, `ite
 Owner: backend. Se despliega con `portal deploy`.
 
 ```ts
-import { defineConfig, allow, block, defineMiddleware } from '@portalsdk/config';
+import { defineConfig, allow, block } from '@portalsdk/config';
 
 export default defineConfig({
   webhooks: {
@@ -278,44 +279,18 @@ export default defineConfig({
       },
     },
 
-    // Tablero colaborativo (11). El único canal donde publica un cliente.
-    'board-*': {
-      anonymous: false,
-      access: 'authz',
-
-      authz: (ctx) => {
-        if (ctx.claims.anon) return block('Crea tu perfil para entrar.');
-        const teamId = ctx.channel.id.slice('board-'.length);
-        const role = (ctx.claims.teams as Record<string, string> | undefined)?.[teamId];
-        // Solo miembros. Un solicitante lee team-{id}, pero no el tablero:
-        // el plan del equipo no es material de reclutamiento.
-        if (role !== 'member') return block('Solo el equipo puede ver este tablero.');
-        return allow({ publish: true, sendDirect: false, isMember: true });
-      },
-
-      // `publish: true` abre la puerta a que un cliente publique cualquier
-      // cosa. Este middleware es el que la cierra, y por eso es obligatorio.
-      onPublish: [
-        defineMiddleware('publish', (ctx) => {
-          if (!ctx.message.ephemeral)
-            return block('El estado del tablero se escribe por la API, no por el canal.');
-          const allowed = ['board.cursor', 'board.note_dragging', 'board.note_focus'];
-          if (!allowed.includes(ctx.message.type)) return block('Tipo no permitido.');
-          return allow();
-        }),
-      ],
-    },
+    // El tablero (11) no aparece aquí: reutiliza 'team-*' tal cual (ADR-015).
 
     // Reto en vivo (12). Nadie publica: las respuestas van por REST.
-    'quiz-*': {
+    'challenge-*': {
       anonymous: false,
       access: 'authz',
       mode: 'broadcast',
 
       authz: (ctx) => {
         if (ctx.claims.anon) return block('Crea tu perfil para entrar.');
-        // "quiz-{teamId}-{runId}" → el teamId es el segmento del medio.
-        const rest = ctx.channel.id.slice('quiz-'.length);
+        // "challenge-{teamId}-{challengeId}" → el teamId es el segmento del medio.
+        const rest = ctx.channel.id.slice('challenge-'.length);
         const teamId = rest.slice(0, rest.lastIndexOf('-'));
         const role = (ctx.claims.teams as Record<string, string> | undefined)?.[teamId];
         if (!role) return block('No participas en este reto.');
@@ -326,7 +301,9 @@ export default defineConfig({
 });
 ```
 
-`mode: 'broadcast'` en `quiz-*` porque el patrón es uno-a-muchos, y **el modo es inmutable una vez creado el canal**: elegirlo mal obliga a cambiar el id. En broadcast, `sendActivity` y `sendTyping` son no-op; aquí no se usan.
+`mode: 'broadcast'` en `challenge-*` porque el patrón es uno-a-muchos, y **el modo es inmutable una vez creado el canal**: elegirlo mal obliga a cambiar el id. En broadcast, `sendActivity` y `sendTyping` son no-op; aquí no se usan.
+
+Los dos features nuevos añaden **un solo canal** entre ambos. El tablero no añade ninguno.
 
 **Punto no obvio:** `publish: false` en todos los canales para clientes. La única forma de escribir estado es la API REST. Así el backend conserva la fuente de verdad y ningún cliente puede inyectar un evento falso en el grafo. Las señales efímeras (typing, presence) no pasan por `publish`.
 

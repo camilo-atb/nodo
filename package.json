@@ -1,0 +1,22 @@
+{
+  "name": "nodo",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "dev:api": "pnpm --filter @nodo/api dev",
+    "dev:web": "pnpm --filter @nodo/frontend dev",
+    "db:local": "pnpm --filter @nodo/api db:local",
+    "db:migrate": "pnpm --filter @nodo/api db:migrate",
+    "db:seed": "pnpm --filter @nodo/api db:seed"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}

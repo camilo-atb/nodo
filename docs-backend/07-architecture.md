@@ -149,13 +149,13 @@ El orden `commit → publish` garantiza que Portal nunca anuncia algo que Postgr
 | Publicar antes del commit | media | alto | regla única en [05](05-rest-api.md); code review de cada handler |
 | `authz` mal configurado: ningún cliente conecta | baja | **fatal** | validar `portal deploy` contra un cliente real antes de construir sobre él |
 | Origen no registrado en producción | media | alto | `portal origins add` como paso del despliegue, no manual |
-| Grafo ilegible al crecer el número de nodos | media | medio | caducidad de sugerencias, filtrado por categoría y acotado por `Space` ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)) |
-| `onPublish` ausente o permisivo en `board-*` | media | **fatal** | `publish: true` sin middleware permite inyectar estado falso. AC-09 en [11](11-collab-board.md) lo verifica a mano antes de exponerlo |
+| Grafo ilegible al crecer el número de nodos | media | medio | caducidad de sugerencias, filtrado por categoría y acotado por `Event` ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)) |
+| Un solicitante ve el tablero del equipo | alta | bajo | `authz` de `team-*` admite `applicant`; aceptado a conciencia ([ADR-015](01-decisions.md#adr-015--el-contrato-se-alinea-con-el-frontend-ya-implementado)) |
 | Sobre que excede los 2KB de Portal | media | alto | Portal rechaza la publicación y el evento se pierde. `members` acotado a 8 y tope de participantes del reto ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)) |
 | Pregunta generada con la respuesta mal marcada | media | alto | no hay fallback posible: corrompe la selección. El líder aprueba el borrador antes de poder lanzar ([12](12-live-quiz.md#el-borrador-y-su-aprobación)) |
 | Partida abandonada que nadie avanza | **alta** | bajo | `expires_at` + barrido cada 5 min, en el job runner que ya existe |
 
-Los tres riesgos marcados **fatal** se verifican antes de construir lógica de producto encima: los tres invalidan el sistema entero, no una funcionalidad.
+Los dos riesgos marcados **fatal** se verifican antes de construir lógica de producto encima: ambos invalidan el sistema entero, no una funcionalidad.
 
 ## Deuda conocida
 
@@ -168,7 +168,7 @@ Asumida de forma deliberada y documentada:
 - **Sin tests de integración contra Portal** — solo contra la capa de dominio.
 - **El webhook no reprocesa el dominio** — `POST /v1/portal/webhooks` descarta el eco del agente y registra `processed_events`, pero no re-dispara el matchmaker. Si el disparo en proceso se pierde, este receptor no lo compensa hoy ([05](05-rest-api.md#webhook-de-portal)).
 - **El tablero no tiene historial ni deshacer** — una nota borrada no se recupera. `notes` no lleva borrado lógico.
-- **Sin resolución de conflictos en el tablero** — dos personas editando el texto de la misma nota se pisan: gana el último `PATCH`. `board.note_focus` lo hace visible, pero no lo impide.
+- **Sin resolución de conflictos en el tablero** — dos personas editando el texto de la misma tarjeta se pisan: gana el último `PATCH`.
 - **Sin paginación en el tablero** — el tope de 200 notas es lo que lo mantiene correcto, igual que `/v1/graph` hasta ~2.000 nodos.
 - **`onPublish` y `authz` sin prueba automatizada** — corren dentro de Portal. AC-09 es verificación manual ([10](10-testing.md#fuera-de-alcance)).
 - **El reto no valida la calidad de las preguntas** — se comprueba la forma (cuatro opciones, un índice correcto), no que la respuesta marcada sea la buena. Esa garantía la aporta el líder al aprobar.

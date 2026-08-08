@@ -161,14 +161,14 @@ Publica `team.member_joined` en `network-main` y `application.resolved` en `team
 ### Espacios
 
 ```http
-POST /v1/spaces                [auth]   { name, description?, kind, tags?, startsAt?, endsAt? }
-GET  /v1/spaces                         ?kind=hackathon
-GET  /v1/spaces/:id
+POST /v1/events                [auth]   { name, description?, kind, tags?, startsAt?, endsAt? }
+GET  /v1/events                         ?kind=hackathon
+GET  /v1/events/:id
 ```
 
-Todo Team y toda Idea pertenece a un Space ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). `spaceId` entra como campo **opcional** en `POST /v1/teams` y `POST /v1/ideas`: si falta, cae al espacio abierto que siembra `db:seed`. Por eso la clave foránea puede ser obligatoria sin romper a ningún cliente existente.
+Todo Team y toda Idea pertenece a un Event ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). `eventId` entra como campo **opcional** en `POST /v1/teams` y `POST /v1/ideas`: si falta, cae al espacio abierto que siembra `db:seed`. Por eso la clave foránea puede ser obligatoria sin romper a ningún cliente existente.
 
-`GET /v1/graph` acepta `?spaceId=` para acotar el snapshot. Sin el parámetro devuelve la red entera, como hasta ahora.
+`GET /v1/graph` acepta `?eventId=` para acotar el snapshot. Sin el parámetro devuelve la red entera, como hasta ahora.
 
 ### Tablero y reto
 
@@ -223,9 +223,9 @@ Forma única:
 | `VALIDATION_ERROR` | 422 | Zod, con `details.issues` |
 | `RATE_LIMITED` | 429 | 60 req/min por sesión |
 | `BOARD_FULL` | 409 | 200 notas por tablero ([11](11-collab-board.md)) |
-| `QUIZ_NOT_READY` | 409 | lanzar una partida sobre un Quiz en `draft` |
-| `RUN_ALREADY_STARTED` | 409 | entrar a una partida ya arrancada |
-| `RUN_FULL` | 409 | 50 participantes |
+| `CHALLENGE_NOT_READY` | 409 | lanzar un reto en `draft` |
+| `CHALLENGE_ALREADY_STARTED` | 409 | entrar a un reto ya arrancado |
+| `CHALLENGE_FULL` | 409 | 50 participantes |
 | `ANSWER_TOO_LATE` | 409 | `now > questionEndsAt` contra el reloj del servidor |
 | `ALREADY_ANSWERED` | 409 | segunda respuesta a la misma pregunta |
 

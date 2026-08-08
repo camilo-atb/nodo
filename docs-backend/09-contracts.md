@@ -15,7 +15,7 @@ El backend valida con el esquema en el borde; el frontend usa el tipo. Una sola 
 
 | Regla | Detalle |
 |---|---|
-| Identificadores | `string` con prefijo por tipo: `per_`, `spc_`, `tm_`, `idea_`, `app_`, `sug_`, `evt_`, `brd_`, `note_`, `quiz_`, `qst_`, `run_`, `ans_` |
+| Identificadores | `string` con prefijo por tipo: `per_`, `ev_`, `tm_`, `idea_`, `app_`, `sug_`, `evt_`, `brd_`, `card_`, `chl_`, `qst_`, `ans_` |
 | Fechas | `number`, epoch en milisegundos. Nunca `Date` ni ISO string |
 | Nombres de campo | `camelCase` en el contrato, aunque la columna sea `snake_case` |
 | Campos opcionales | `?` solo cuando la ausencia es semántica, no cuando el valor puede ser vacío |
@@ -109,7 +109,7 @@ export type TeamDTO = {
   members: PersonRef[];            // en un sobre: hasta 8, lead primero
   memberCount: number;             // la verdad, siempre
   needs: NeedRef[];
-  spaceId: string;
+  eventId: string;
   ideaId: string | null;
   boardId: string;                 // 1:1, nace con el equipo
   maxSize: number;                 // por defecto 4, sin tope superior
@@ -123,16 +123,16 @@ Por eso existe `memberCount`: **es el campo del que fiarse para «X de Y»**, nu
 
 Las altas y bajas no dependen de este array: viajan por `team.member_joined` y `team.member_left`, que llevan una sola `PersonRef` y no tienen problema de tamaño.
 
-### SpaceDTO
+### EventDTO
 
 ```ts
-export type SpaceKind = 'hackathon' | 'project';
+export type EventKind = 'hackathon' | 'project';
 
-export type SpaceDTO = {
+export type EventDTO = {
   id: string;
   name: string;
   description: string | null;
-  kind: SpaceKind;
+  kind: EventKind;
   tags: string[];
   startsAt: number | null;         // null en 'project': no tiene fechas
   endsAt: number | null;
@@ -151,7 +151,7 @@ export type IdeaDTO = {
   title: string;
   summary: string | null;
   author: PersonRef;
-  spaceId: string;
+  eventId: string;
   teamId: string | null;           // arista SPAWNED, si ya derivó en equipo
   interestedCount: number;
   createdAt: number;
@@ -172,14 +172,14 @@ export type ApplicationDTO = {
   leadId: string;                  // requerido por el bridge notify
   status: ApplicationStatus;
   message: string | null;
-  quizScore: number | null;        // resultado del último reto, si participó
-  quizRank: number | null;         // su puesto en ese reto
+  challengeScore: number | null;        // resultado del último reto, si participó
+  challengeRank: number | null;         // su puesto en ese reto
   createdAt: number;
   resolvedAt: number | null;
 };
 ```
 
-`quizScore` y `quizRank` **ordenan** la bandeja del líder y marcan al primero. No cambian el estado de nada por sí solos: aceptar sigue siendo un acto explícito ([12](12-live-quiz.md#el-ranking-no-acepta-a-nadie)).
+`challengeScore` y `challengeRank` **ordenan** la bandeja del líder y marcan al primero. No cambian el estado de nada por sí solos: aceptar sigue siendo un acto explícito ([12](12-live-quiz.md#el-ranking-no-acepta-a-nadie)).
 
 ### SuggestionDTO
 
@@ -203,80 +203,63 @@ export type SuggestionDTO = {
 
 ### DTOs del tablero
 
-```ts
-export type NoteColor = 'yellow' | 'green' | 'blue' | 'pink' | 'purple' | 'gray';
+Es exactamente lo que `frontend/src/stores/boardStore.ts` ya consume:
 
-export type NoteDTO = {
+```ts
+export type BoardCard = {
   id: string;
-  boardId: string;
-  author: PersonRef;
-  text: string;                    // ≤ 500 caracteres
+  content: string;
   x: number;
   y: number;
-  z: number;
-  color: NoteColor;
+  color: string;
+  createdBy: string;               // personId, no PersonRef
   votes: number;                   // ya agregado
-  reactions: Record<string, number>;   // emoji → cuántos
-  createdAt: number;
-  updatedAt: number;
+  isWinner: boolean;
+  myVote: boolean;                 // relativo a quien pregunta
 };
 
 export type BoardSnapshot = {
-  board: { id: string; teamId: string; createdAt: number };
-  notes: NoteDTO[];
-  seq: number;                     // marca de agua de board-{teamId}
+  cards: BoardCard[];
 };
 ```
 
-`votes` y `reactions` viajan **ya agregados** para que el cliente no lleve la cuenta. Es lo que hace inocua la reaplicación cuando Portal entrega dos veces ([03](03-portal-contract.md)).
+`votes` viaja **ya agregado** para que el cliente no lleve la cuenta. Es lo que hace inocua la reaplicación cuando Portal entrega dos veces ([03](03-portal-contract.md)).
+
+`myVote` **solo tiene valor en la respuesta REST**: un mismo sobre lo leen varias personas y no puede afirmar algo distinto para cada una. En los mensajes va omitido y el cliente lo deriva de sus propios `board.vote_cast` / `board.vote_removed` ([11](11-collab-board.md)).
 
 ### DTOs del reto
 
+Es lo que `frontend/src/pages/ChallengePage.tsx` y `challengeStore.ts` ya consumen:
+
 ```ts
-export type QuizStatus = 'draft' | 'ready';
-export type QuizRunMode = 'live' | 'solo';
-export type QuizRunStatus = 'lobby' | 'running' | 'ended' | 'abandoned';
+export type ChallengeStatus =
+  | 'draft' | 'waiting' | 'question' | 'reviewing' | 'ended';
 
-/** Lo que se publica. Nunca lleva la respuesta correcta. */
-export type QuestionDTO = {
-  id: string;
-  position: number;
-  prompt: string;
-  options: [string, string, string, string];
-  seconds: number;
-};
-
-export type QuizDTO = {
+export type ChallengeInfo = {
   id: string;
   teamId: string;
+  skillSlug: string;               // un reto, un skill
   title: string;
-  needSlugs: string[];
-  status: QuizStatus;              // 'draft' no se puede lanzar
-  questions: QuestionDTO[];
-  createdAt: number;
+  status: ChallengeStatus;         // 'draft' no se puede lanzar
+  durationSec: number;
+  questionCount: number;
+};
+
+/** Lo que se publica. Nunca lleva la respuesta correcta. */
+export type ChallengeQuestion = {
+  text: string;
+  options: [string, string, string, string];
 };
 
 export type LeaderboardRow = {
-  person: PersonRef;
+  personId: string;
+  displayName: string;
   score: number;
-  answeredCount: number;
-  left: boolean;                   // abandonó; conserva su puntaje
-};
-
-export type QuizRunDTO = {
-  id: string;
-  quizId: string;
-  teamId: string;
-  mode: QuizRunMode;
-  status: QuizRunStatus;
-  currentQuestion: number | null;
-  questionEndsAt: number | null;   // epoch ms — el plazo es dato, no temporizador
-  leaderboard: LeaderboardRow[];
-  createdAt: number;
+  position: number;
 };
 ```
 
-**`QuestionDTO` no tiene `correctIndex` y no puede tenerlo.** El `content` de un mensaje lo reciben todos los suscriptores del canal, rivales incluidos. La respuesta correcta solo existe en Postgres y aparece por primera vez en `quiz.question_closed`, cuando la pregunta ya cerró para todos ([12](12-live-quiz.md#las-respuestas-no-viajan-por-el-canal)).
+**`ChallengeQuestion` no tiene `correctIndex` y no puede tenerlo.** El `content` de un mensaje lo reciben todos los suscriptores del canal, rivales incluidos. La respuesta correcta solo existe en Postgres y aparece por primera vez en `challenge.leaderboard_update`, cuando la pregunta ya cerró para todos ([12](12-live-quiz.md#las-respuestas-no-viajan-por-el-canal)).
 
 ## Por qué hay campos denormalizados
 
@@ -307,45 +290,35 @@ export type TeamEvent =
   | TeamEnvelope<'application.resolved',  { application: ApplicationDTO }>
   | TeamEnvelope<'team.need_changed',     { teamId: string; needs: NeedRef[] }>;
 
-/** Canal board-{teamId}. Los publica el backend, tras el commit. */
+/** Tablero (11). Van por el MISMO canal `team-{teamId}`, no por uno propio. */
 export type BoardEvent =
-  | TeamEnvelope<'note.created',  { note: NoteDTO }>
-  | TeamEnvelope<'note.updated',  { note: NoteDTO }>
-  | TeamEnvelope<'note.deleted',  { noteId: string }>
-  | TeamEnvelope<'note.voted',    { noteId: string; personId: string; votes: number }>
-  | TeamEnvelope<'note.reacted',  { noteId: string; personId: string; emoji: string;
-                                    reactions: Record<string, number> }>;
+  | TeamEnvelope<'board.card_created',   { card: BoardCard }>
+  | TeamEnvelope<'board.card_moved',     { cardId: string; x: number; y: number }>
+  | TeamEnvelope<'board.card_updated',   { cardId: string; content: string }>
+  | TeamEnvelope<'board.vote_cast',      { cardId: string; personId: string; votes: number }>
+  | TeamEnvelope<'board.vote_removed',   { cardId: string; personId: string; votes: number }>
+  | TeamEnvelope<'board.winner_selected',{ cardId: string }>;
 
-/** Canal quiz-{teamId}-{runId}. Los publica el backend. */
-export type QuizEvent =
-  | TeamEnvelope<'quiz.lobby_updated',   { runId: string; participants: PersonRef[] }>
-  | TeamEnvelope<'quiz.started',         { runId: string; questionCount: number }>
-  | TeamEnvelope<'quiz.question_opened', { runId: string; position: number;
-                                           question: QuestionDTO; questionEndsAt: number }>
-  | TeamEnvelope<'quiz.question_closed', { runId: string; position: number;
-                                           correctIndex: number;
-                                           leaderboard: LeaderboardRow[] }>
-  | TeamEnvelope<'quiz.ended',           { runId: string; leaderboard: LeaderboardRow[] }>;
+/** Canal challenge-{teamId}-{challengeId}. Los publica el backend. */
+export type ChallengeEvent =
+  | TeamEnvelope<'challenge.question_revealed',  { questionIndex: number;
+                                                   question: ChallengeQuestion;
+                                                   endsAt: number }>
+  | TeamEnvelope<'challenge.leaderboard_update', { questionIndex: number;
+                                                   correctIndex: number;
+                                                   rankings: LeaderboardRow[] }>
+  | TeamEnvelope<'challenge.ended',              { rankings: LeaderboardRow[] }>;
 
-export type AnyEvent = MainEvent | TeamEvent | BoardEvent | QuizEvent;
+export type AnyEvent = MainEvent | TeamEvent | BoardEvent | ChallengeEvent;
 ```
 
 `team.created` y `team.updated` llevan el `TeamDTO` completo, que ya incluye `needs`. No hay un campo `needs` separado.
 
-Los sobres de `TeamEvent`, `BoardEvent` y `QuizEvent` no llevan `graph`: no afectan al grafo público ([03](03-portal-contract.md)).
+Los sobres de `TeamEvent`, `BoardEvent` y `ChallengeEvent` no llevan `graph`: no afectan al grafo público ([03](03-portal-contract.md)).
 
-### Señales efímeras — las publica el cliente
+`board.card_moved` y `board.card_updated` llevan solo el delta, no la tarjeta entera: son los dos mensajes de mayor frecuencia y el `content` de Portal está limitado a 2KB.
 
-Estas **no son `Envelope`**. Viajan por `send({ ephemeral: true, type, content })`, no se persisten, no tienen `seq` y no entran en el historial. Solo existen en `board-{teamId}` ([ADR-011](01-decisions.md#adr-011--los-clientes-publican-señales-efímeras-en-el-canal-del-tablero)).
-
-```ts
-export type BoardSignal =
-  | { type: 'board.cursor';        content: { x: number; y: number } }
-  | { type: 'board.note_dragging'; content: { noteId: string; x: number; y: number } }
-  | { type: 'board.note_focus';    content: { noteId: string | null } };
-```
-
-Se tipan aquí para que backend y frontend compartan la lista blanca que aplica `onPublish`. Un tipo fuera de esta unión lo rechaza Portal.
+**No hay señales efímeras.** Ningún cliente publica en ningún canal ([ADR-015](01-decisions.md#adr-015--el-contrato-se-alinea-con-el-frontend-ya-implementado)): el arrastre del tablero actualiza en local y hace un solo `POST` al soltar.
 
 ### Un segundo agente
 
@@ -409,7 +382,7 @@ export type ErrorCode =
   // Tablero (11)
   | 'BOARD_FULL'
   // Reto (12)
-  | 'QUIZ_NOT_READY' | 'RUN_ALREADY_STARTED' | 'RUN_FULL'
+  | 'CHALLENGE_NOT_READY' | 'CHALLENGE_ALREADY_STARTED' | 'CHALLENGE_FULL'
   | 'ANSWER_TOO_LATE' | 'ALREADY_ANSWERED';
 
 export type ApiError = {
@@ -427,12 +400,12 @@ export type ApiError = {
 packages/contracts/
   src/
     primitives.ts    PersonRef · TeamRef · SkillRef · NeedRef · AgentId · enums
-    dto.ts           PersonDTO · SpaceDTO · TeamDTO · IdeaDTO · ApplicationDTO · SuggestionDTO
-    board.ts         NoteDTO · BoardSnapshot · BoardSignal
-    quiz.ts          QuizDTO · QuestionDTO · QuizRunDTO · LeaderboardRow
+    dto.ts           PersonDTO · EventDTO · TeamDTO · IdeaDTO · ApplicationDTO · SuggestionDTO
+    board.ts         BoardCard · BoardSnapshot
+    challenge.ts     ChallengeInfo · ChallengeQuestion · LeaderboardRow
     graph.ts         GraphNode · GraphEdge · GraphPatch
     envelope.ts      Envelope · MainEnvelope · TeamEnvelope · ActorRef · FeedLine
-    events.ts        MainEvent · TeamEvent · BoardEvent · QuizEvent · AnyEvent
+    events.ts        MainEvent · TeamEvent · BoardEvent · ChallengeEvent · AnyEvent
     rest.ts          respuestas REST · ApiError · ErrorCode
     index.ts
 ```

@@ -7,7 +7,7 @@ El dominio es un grafo. Toda entidad es un nodo tipado y toda relación es una a
 | Término | Definición |
 |---|---|
 | **Person** | Participante de la red. Se crea al completar el perfil y es el único nodo con identidad de sesión. |
-| **Space** | Contenedor donde la gente se encuentra para construir. De tipo `hackathon` —acotado en el tiempo, varios equipos compitiendo— o `project` —abierto, colaborando. Todo Team y toda Idea pertenece a uno ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). |
+| **Event** | Contenedor donde la gente se encuentra para construir. De tipo `hackathon` —acotado en el tiempo, varios equipos compitiendo— o `project` —abierto, colaborando. Todo Team y toda Idea pertenece a uno ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). |
 | **Idea** | Propuesta de proyecto publicada por una Person. Existe con o sin equipo. |
 | **Team** | Grupo que construye un proyecto. Es el vehículo del proyecto. Su tamaño máximo es un atributo propio (`max_size`), con valor por defecto **4** y sin tope superior ([ADR-014](01-decisions.md#adr-014--members-en-el-sobre-es-una-vista-acotada-membercount-es-la-verdad)). |
 | **Skill** | Tag del vocabulario canónico. Conjunto cerrado: no se crean skills en runtime. |
@@ -16,9 +16,8 @@ El dominio es un grafo. Toda entidad es un nodo tipado y toda relación es una a
 | **Suggestion** | Recomendación de un Agent. Es una *propuesta* de arista, no una arista de dominio. |
 | **Agent** | Actor de software con identidad propia en el grafo y en el feed. Hay dos: `matchmaker` y `quizmaster`. No confundir con `LlmProvider`, que es la costura técnica hacia el modelo y es una sola ([12](12-live-quiz.md)). |
 | **Board** | Lienzo colaborativo de un Team, uno por Team, donde el pitch se convierte en un plan ([11](11-collab-board.md)). |
-| **Note** | Papelito de texto sobre un Board, con posición, color, votos y reacciones. **Nunca «Idea»**: Idea es otra cosa y es pública. |
-| **Quiz** | Conjunto de preguntas anclado a los Need de un Team. Se redacta una vez y sirve para varias partidas ([12](12-live-quiz.md)). |
-| **QuizRun** | Una partida concreta de un Quiz, con sus participantes y su reloj. |
+| **Card** | Papelito de texto sobre un Board, con posición, color, votos y reacciones. **Nunca «Idea»**: Idea es otra cosa y es pública. |
+| **Challenge** | Reto sobre un skill concreto de un Team, con sus preguntas, participantes y reloj ([12](12-live-quiz.md)). |
 
 «Proyecto» **no es una entidad**. Lo que en conversación se llama «el proyecto» es un Team, o el par Idea + Team cuando la Idea lo engendró. El glosario completo, incluidos los términos a evitar, está en [`CONTEXT.md`](../CONTEXT.md).
 
@@ -89,16 +88,16 @@ La distribución física de estas entidades en tablas está en [04](04-data-mode
 ```
 Person   { id, handle, display_name, headline, bio_raw, availability,
            status, language, recovery_code, created_at }
-Idea     { id, title, summary, author_id, space_id, created_at }
-Team     { id, name, pitch, status, lead_id, idea_id?, space_id,
+Idea     { id, title, summary, author_id, event_id, created_at }
+Team     { id, name, pitch, status, lead_id, idea_id?, event_id,
            max_size=4, created_at }
 Skill    { id, slug, label, category }
 Agent    { id='matchmaker'|'quizmaster', display_name }
 ```
 
-**`Space` no es un nodo del grafo.** Vive en su propia tabla y viaja como `spaceId` en el `meta` de los nodos `team` e `idea`. Es una dimensión de filtro, no un ámbito: `network-main` sigue siendo un solo canal para toda la red y el cliente filtra con `room.view()` ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)).
+**`Event` no es un nodo del grafo.** Vive en su propia tabla y viaja como `eventId` en el `meta` de los nodos `team` e `idea`. Es una dimensión de filtro, no un ámbito: `network-main` sigue siendo un solo canal para toda la red y el cliente filtra con `room.view()` ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)).
 
-**`Board`, `Note`, `Quiz` y `QuizRun` tampoco entran al grafo.** Son internos de un equipo; el grafo público muestra que el equipo existe y qué le falta, no qué está pensando ni a quién está evaluando. Mantener `NodeKind` intacto además preserva la compilación del frontend, que construye `Record<NodeKind, …>` exhaustivos.
+**`Board`, `Card` y `Challenge` tampoco entran al grafo.** Son internos de un equipo; el grafo público muestra que el equipo existe y qué le falta, no qué está pensando ni a quién está evaluando. Mantener `NodeKind` intacto además preserva la compilación del frontend, que construye `Record<NodeKind, …>` exhaustivos.
 
 `Skill.category` ∈ `frontend` · `backend` · `mobile` · `data-ai` · `design` · `product` · `infra` · `other`.
 
@@ -197,8 +196,8 @@ Se aplican en la capa de servicio **y** con constraints en la base de datos. Un 
 | 8 | Una Suggestion caduca a las 2 h | `expires_at`; al caducar deja de dibujarse |
 | 9 | El agente no sugiere personas `teamed` ni `idle`, ni equipos `complete` o `building` | filtrado en SQL |
 | 10 | Un Team tiene exactamente un Board | `boards.team_id` es `unique`; nace en la transacción que crea el equipo |
-| 11 | Un voto y un emoji por Person y Note | clave primaria compuesta en `note_votes` y `note_reactions` |
-| 12 | Una sola QuizRun viva por Quiz | índice único parcial sobre `status in ('lobby','running')` |
+| 11 | Un voto por Person y Card | clave primaria compuesta en `board_votes` |
+| 12 | Un solo Challenge vivo por Team y skill | índice único parcial |
 | 13 | Una respuesta por Person y pregunta | índice único; la segunda devuelve `409 ALREADY_ANSWERED` |
 | 14 | Fuera de plazo no puntúa | `now > questionEndsAt` contra el reloj **del servidor** → `409 ANSWER_TOO_LATE` |
 

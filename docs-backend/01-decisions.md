@@ -392,3 +392,33 @@ type TeamEnvelope<T extends string, P> = Envelope<T, P> & { graph?: never };
 - `members` en un sobre es una **vista**, no un censo. Quien necesite la lista completa la pide por REST.
 - El frontend debe leer `memberCount` para el contador «X de Y». Mientras siga usando `members.length` mostrará un número corto en equipos de más de 8. Es tarea de seguimiento.
 - La cascada de `Team.status` no cambia: «queda un hueco» significa lo mismo con 4 que con 40.
+
+---
+
+## ADR-015 — El contrato se alinea con el frontend ya implementado
+
+**Estado:** cerrada · **supersede a [ADR-011](#adr-011--los-clientes-publican-señales-efímeras-en-el-canal-del-tablero)** y corrige la nomenclatura de [ADR-013](#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)
+
+**Contexto.** ADR-011 a ADR-014 se escribieron sin saber que el frontend ya tenía ambos features construidos. Al arrancarlo contra el API real aparecieron dos `404` —`GET /v1/events` y `GET /v1/challenges/:id`— que revelaron un contrato ya escrito y en uso, distinto del especificado.
+
+**Decisión.** Donde el desacuerdo es de nombre, gana el frontend. Donde es de estructura, gana la especificación.
+
+| | Se adopta | En vez de |
+|---|---|---|
+| Contenedor | `Event`, `/v1/events` | `Space`, `/v1/spaces` |
+| Pieza del tablero | `Card`, `card_` | `Note`, `note_` |
+| Reto | `Challenge`, `/v1/challenges` | `Quiz` + `QuizRun` |
+| Canal del tablero | **`team-{teamId}`, reutilizado** | canal propio `board-*` |
+| Escritura del tablero | REST en todos los casos | efímero para el arrastre + REST al soltar |
+
+**Por qué.**
+- Los nombres son cosméticos y su código ya está escrito y probado. Lo que motivaba `Note` era no colisionar con `Idea`, y `Card` tampoco colisiona. Lo que motivaba `Space` era que un proyecto abierto no es un evento; se acepta el término impreciso a cambio de no renombrar seis archivos ya funcionando.
+- Reutilizar `team-{teamId}` elimina un canal, un bloque de `authz` y un middleware. La autorización que el tablero necesita ya está desplegada.
+- **Sin canal propio, ADR-011 se queda sin objeto**: no hay `board-*` al que otorgar `publish`, y su implementación no publica desde el cliente en ningún momento. `publish: false` vuelve a ser universal y el principio 1 de [03](03-portal-contract.md) queda intacto.
+- Las decisiones estructurales **no** se ceden: [ADR-012](#adr-012--el-plazo-del-reto-es-un-dato-no-un-temporizador) sobrevive entero, y de hecho su frontend ya cronometra contra un instante de fin, no contra una duración propia.
+
+**Consecuencias.**
+- El tablero no tiene arrastre en vivo en v1: se ve al soltar. Recuperarlo exige un canal propio y reabrir lo que ADR-011 decidía.
+- El `authz` de `team-*` admite solicitantes, así que **un solicitante ve el tablero del equipo**. Se acepta a cambio de no duplicar la autorización.
+- Un cambio obligatorio en el frontend: el canal del reto pasa de `challenge-{challengeId}` a `challenge-{teamId}-{challengeId}`, porque `authz` corre sin base de datos y no puede traducir un id de reto a un equipo. Es una línea.
+- `Event` queda en el glosario como término impreciso aceptado a conciencia, para que nadie lo «arregle» dentro de seis meses.

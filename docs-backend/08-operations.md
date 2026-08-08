@@ -116,7 +116,7 @@ curl localhost:8080/v1/graph | jq '{n:(.nodes|length), e:(.edges|length)}'
 
 **Vocabulario** — obligatorio en cualquier entorno. Las 75 skills canónicas y sus 141 alias ([04](04-data-model.md)). Sin él no hay matching.
 
-**Espacio abierto por defecto** — obligatorio en cualquier entorno. Un `Space` de tipo `project` al que caen los equipos e ideas creados sin `spaceId`. Es lo que permite que la clave foránea sea obligatoria sin romper a ningún cliente ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). Sin él, `POST /v1/teams` falla.
+**Espacio abierto por defecto** — obligatorio en cualquier entorno. Un `Event` de tipo `project` al que caen los equipos e ideas creados sin `eventId`. Es lo que permite que la clave foránea sea obligatoria sin romper a ningún cliente ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). Sin él, `POST /v1/teams` falla.
 
 **Conjunto representativo** — solo en desarrollo. Personas, equipos e ideas con skills y necesidades distribuidas por categoría, en estados variados (`recruiting`, `almost_full`, `building`, `complete`). Sirve para desarrollar y calibrar el matchmaker contra datos con forma realista.
 

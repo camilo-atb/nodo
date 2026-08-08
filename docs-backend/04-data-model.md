@@ -197,7 +197,7 @@ create table people (
 -- Contenedor obligatorio (ADR-013). No es un nodo del grafo: es una
 -- dimensión de filtro. Las fechas son nullable porque un 'project' no
 -- las tiene; un 'hackathon' sí.
-create table spaces (
+create table events (
   id          text primary key,
   name        text not null,
   description text,
@@ -208,14 +208,14 @@ create table spaces (
   created_at  timestamptz not null default now()
 );
 
--- Orden obligatorio: spaces → people → ideas → teams.
+-- Orden obligatorio: eventos → people → ideas → teams.
 -- teams.idea_id apunta a ideas, así que ideas debe existir antes.
 create table ideas (
   id          text primary key references nodes(id) on delete cascade,
   title       text not null,
   summary     text,
   author_id   text not null references people(id),
-  space_id    text not null references spaces(id),
+  event_id    text not null references events(id),
   created_at  timestamptz not null default now()
 );
 
@@ -225,7 +225,7 @@ create table teams (
   pitch       text,
   lead_id     text not null references people(id),
   idea_id     text references ideas(id),
-  space_id    text not null references spaces(id),
+  event_id    text not null references events(id),
   -- Sin tope superior (ADR-014): un proyecto de código abierto necesita
   -- más de cuatro. El límite de 2KB de Portal se resuelve acotando
   -- `members` en el sobre, no acotando el equipo.
@@ -234,8 +234,8 @@ create table teams (
   created_at  timestamptz not null default now()
 );
 
-create index teams_space_idx on teams (space_id);
-create index ideas_space_idx on ideas (space_id);
+create index teams_event_idx on teams (event_id);
+create index ideas_event_idx on ideas (event_id);
 
 create table suggestions (
   id             text primary key,
@@ -292,7 +292,7 @@ create table channel_watermarks (
 );
 ```
 
-`channel_watermarks` ya es una tabla **por canal**, así que los canales nuevos no la cambian: cada `board-{teamId}` es una fila más, con la misma semántica de [ADR-009](01-decisions.md#adr-009--la-marca-de-agua-seq-es-la-de-network-main). Los canales `quiz-*` no llevan marca: sus sobres no mutan estado que un snapshot deba reconciliar, y una partida perdida no se recupera reaplicando parches.
+`channel_watermarks` ya es una tabla **por canal**, así que los canales nuevos no la cambian: cada `team-{teamId}` es una fila más, con la misma semántica de [ADR-009](01-decisions.md#adr-009--la-marca-de-agua-seq-es-la-de-network-main). Los canales `challenge-*` no llevan marca: sus sobres no mutan estado que un snapshot deba reconciliar, y una partida perdida no se recupera reaplicando parches.
 
 ### Tablas de los features de tiempo real
 
@@ -300,8 +300,8 @@ Viven junto a su diseño, para no leer dos documentos a la vez:
 
 | Tablas | Dónde |
 |---|---|
-| `boards` · `notes` · `note_votes` · `note_reactions` | [11](11-collab-board.md#datos) |
-| `quizzes` · `questions` · `quiz_runs` · `quiz_entries` · `quiz_answers` | [12](12-live-quiz.md#datos) |
+| `boards` · `board_cards` · `board_votes` | [11](11-collab-board.md#datos) |
+| `challenges` · `challenge_questions` · `challenge_entries` · `challenge_answers` | [12](12-live-quiz.md#datos) |
 
 ## Identificadores de arista
 
