@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { PortalProvider } from '@portalsdk/react';
 import { portal, fetchPortalToken } from '@/lib/portal';
 import { useSessionStore } from '@/stores/sessionStore';
+import { LandingPage } from '@/pages/LandingPage';
 import { DiscoverPage } from '@/pages/DiscoverPage';
 import { EventPage } from '@/pages/EventPage';
 import { TeamPage } from '@/pages/TeamPage';
@@ -21,7 +22,7 @@ export function App() {
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/discover" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<RequireSession />}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useTeamStore } from '@/stores/teamStore';
@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<TeamStatus, string> = {
 };
 
 export function TeamPage() {
-  const { teamId } = useParams<{ teamId: string }>();
+  const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
   const navigate = useNavigate();
   const personId = useSessionStore((s) => s.personId);
   const myApplication = useTeamStore((s) => s.myApplication);
@@ -194,6 +194,42 @@ export function TeamPage() {
           </h2>
           <NeedsList needs={team.needs} />
         </section>
+
+        {/* Open Board button for members */}
+        {isMember && eventId && teamId && (
+          <section className="mb-6">
+            <button
+              onClick={() => navigate(`/event/${eventId}/team/${teamId}/board`)}
+              className="w-full px-4 py-3 bg-accent text-bg font-semibold rounded-lg hover:bg-accent-2 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>Open Board</span>
+              <span>→</span>
+            </button>
+          </section>
+        )}
+
+        {/* Challenges section */}
+        {isMember && eventId && (
+          <section className="mb-6">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
+              Challenges
+            </h2>
+            <div className="bg-panel border border-border rounded-xl p-4">
+              <Link
+                to={`/event/${eventId}/challenge/mock-challenge`}
+                className="flex items-center justify-between group"
+              >
+                <div>
+                  <p className="text-sm font-medium text-white group-hover:text-accent transition-colors">
+                    Skill Validation Challenge
+                  </p>
+                  <p className="text-xs text-muted mt-0.5">Active • Prove your technical skills</p>
+                </div>
+                <span className="text-muted group-hover:text-accent transition-colors">→</span>
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* Apply button for non-members */}
         {!isMember && (
