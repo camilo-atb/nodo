@@ -11,12 +11,7 @@ interface CreateEventModalProps {
 
 const EVENT_TYPES: { value: EventType; label: string }[] = [
   { value: 'hackathon', label: 'Hackathon' },
-  { value: 'open_source', label: 'Open Source' },
-  { value: 'ai_challenge', label: 'AI Challenge' },
-  { value: 'workshop', label: 'Workshop' },
-  { value: 'meetup', label: 'Meetup' },
-  { value: 'recruiting', label: 'Recruiting' },
-  { value: 'other', label: 'Other' },
+  { value: 'project', label: 'Project' },
 ];
 
 export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
@@ -46,7 +41,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
       addEvent(created);
       onClose();
     } catch {
-      // Silently fail for now — event creation is best-effort
+      // Best-effort — for demo, event creation may not have backend yet
     } finally {
       setSubmitting(false);
     }
@@ -56,11 +51,11 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
     'w-full bg-panel-2 border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:border-violet/50';
 
   return (
-    <Modal open={open} onClose={onClose} title="Create Event">
+    <Modal open={open} onClose={onClose} title="Create Opportunity">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="text"
-          placeholder="Event name"
+          placeholder="Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -68,7 +63,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
         />
 
         <textarea
-          placeholder="Description"
+          placeholder="What will you build? Who do you need?"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
@@ -88,20 +83,26 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
         </select>
 
         <div className="grid grid-cols-2 gap-3">
-          <input
-            type="datetime-local"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            required
-            className={inputClasses}
-          />
-          <input
-            type="datetime-local"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            required
-            className={inputClasses}
-          />
+          <div>
+            <label className="text-[11px] text-muted-2 mb-1 block">Start</label>
+            <input
+              type="datetime-local"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+              className={inputClasses}
+            />
+          </div>
+          <div>
+            <label className="text-[11px] text-muted-2 mb-1 block">End</label>
+            <input
+              type="datetime-local"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              required
+              className={inputClasses}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-2">

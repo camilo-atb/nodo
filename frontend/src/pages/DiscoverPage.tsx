@@ -9,32 +9,35 @@ import { Spinner } from '@/components/base/Spinner';
 const MOCK_EVENTS: NodoEvent[] = [
   {
     id: 'mock-1',
-    name: 'AI Builders Hackathon',
-    description: 'Build AI-powered tools in 48 hours. Teams of 2-5, prizes for top 3.',
+    name: 'Realtime AI Hackathon',
+    description: 'Build AI-powered realtime tools in 48 hours. Teams of 2-4, prizes for top 3.',
     type: 'hackathon',
-    startsAt: '2025-02-01T09:00:00Z',
-    endsAt: '2025-02-03T18:00:00Z',
-    status: 'open',
+    tags: ['AI', 'Open Source'],
+    startsAt: '2026-08-08T09:00:00Z',
+    endsAt: '2026-08-10T18:00:00Z',
+    status: 'active',
     participantCount: 42,
   },
   {
     id: 'mock-2',
-    name: 'Open Source Sprint',
-    description: 'Contribute to popular open-source projects. Mentors available for newcomers.',
-    type: 'open_source',
-    startsAt: '2025-02-10T10:00:00Z',
-    endsAt: '2025-02-10T20:00:00Z',
-    status: 'open',
-    participantCount: 28,
+    name: 'Health AI Platform',
+    description: 'Open source platform for AI-assisted triage in rural clinics. Looking for contributors.',
+    type: 'project',
+    tags: ['AI', 'Healthcare', 'Open Source'],
+    startsAt: '2026-08-01T00:00:00Z',
+    endsAt: '2026-12-31T23:59:00Z',
+    status: 'active',
+    participantCount: 12,
   },
   {
     id: 'mock-3',
-    name: 'LLM Challenge: Agents',
-    description: 'Design and deploy autonomous agents using LLMs. Solo or team entries welcome.',
-    type: 'ai_challenge',
-    startsAt: '2025-02-15T08:00:00Z',
-    endsAt: '2025-02-17T23:59:00Z',
-    status: 'open',
+    name: 'Developer Tools Hackathon',
+    description: 'Build the next great developer tool. CLI, IDE extensions, code generators — anything goes.',
+    type: 'hackathon',
+    tags: ['Developer Tools', 'Web'],
+    startsAt: '2026-08-15T08:00:00Z',
+    endsAt: '2026-08-17T23:59:00Z',
+    status: 'active',
     participantCount: 65,
   },
 ];
@@ -42,11 +45,7 @@ const MOCK_EVENTS: NodoEvent[] = [
 const FILTER_TYPES: { value: EventType | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'hackathon', label: 'Hackathons' },
-  { value: 'open_source', label: 'Open Source' },
-  { value: 'ai_challenge', label: 'AI' },
-  { value: 'workshop', label: 'Workshops' },
-  { value: 'meetup', label: 'Meetups' },
-  { value: 'recruiting', label: 'Recruiting' },
+  { value: 'project', label: 'Projects' },
 ];
 
 export function DiscoverPage() {
@@ -82,30 +81,27 @@ export function DiscoverPage() {
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <svg className="w-7 h-7 text-violet" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="3" />
-            <circle cx="5" cy="6" r="2" />
-            <circle cx="19" cy="6" r="2" />
-            <circle cx="5" cy="18" r="2" />
-            <circle cx="19" cy="18" r="2" />
-            <line x1="7" y1="7" x2="10" y2="10" />
-            <line x1="17" y1="7" x2="14" y2="10" />
-            <line x1="7" y1="17" x2="10" y2="14" />
-            <line x1="17" y1="17" x2="14" y2="14" />
+            <circle cx="6" cy="6" r="2.3" />
+            <circle cx="18" cy="6" r="2.3" />
+            <circle cx="12" cy="18" r="2.3" />
+            <path d="M8 7.2l7.7 0M7.2 8l3.7 7.5M16.8 8l-3.7 7.5" />
           </svg>
           <span className="text-lg font-bold text-white">Nodo</span>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>Create Event</Button>
+        <Button onClick={() => setShowCreateModal(true)}>Create</Button>
       </header>
 
       {/* Content */}
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <h1 className="text-2xl font-bold text-white mb-1">Discover Events</h1>
-        <p className="text-muted text-sm mb-6">Find hackathons, challenges, and collaboration opportunities.</p>
+        <h1 className="text-2xl font-bold text-white mb-1">Discover</h1>
+        <p className="text-muted text-sm mb-6">
+          Find projects and opportunities to build with the right people.
+        </p>
 
         {/* Search */}
         <input
           type="text"
-          placeholder="Search events..."
+          placeholder="Search opportunities..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full bg-panel border border-border rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:border-violet/50 mb-4"
@@ -140,7 +136,7 @@ export function DiscoverPage() {
             ))}
             {filtered.length === 0 && (
               <p className="text-muted text-sm text-center py-8">
-                No events match your filters.
+                No opportunities match your filters.
               </p>
             )}
           </div>

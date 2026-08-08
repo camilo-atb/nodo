@@ -1,23 +1,23 @@
 /**
  * Store de eventos — descubrimiento y evento activo.
+ *
+ * Taxonomía:
+ * - Category (tipo de oportunidad): hackathon | project
+ * - Tags (de qué trata): AI, Open Source, Web, etc. — son informativos, no filtrables en MVP
+ * - Skills (qué necesitas saber): Go, React, etc. — viven en el modelo de teams/needs
  */
 
 import { create } from 'zustand';
 
-export type EventType =
-  | 'hackathon'
-  | 'open_source'
-  | 'ai_challenge'
-  | 'workshop'
-  | 'meetup'
-  | 'recruiting'
-  | 'other';
+/** Solo dos tipos reales de oportunidad. Ambos implican CONSTRUIR algo. */
+export type EventType = 'hackathon' | 'project';
 
 export interface NodoEvent {
   id: string;
   name: string;
   description: string;
   type: EventType;
+  tags: string[];
   startsAt: string;
   endsAt: string;
   status: string;

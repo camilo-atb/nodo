@@ -7,24 +7,14 @@ interface EventCardProps {
   event: NodoEvent;
 }
 
-const typeColors: Record<EventType, 'violet' | 'green' | 'cyan' | 'amber' | 'muted'> = {
+const typeColors: Record<EventType, 'violet' | 'green'> = {
   hackathon: 'violet',
-  open_source: 'green',
-  ai_challenge: 'cyan',
-  workshop: 'amber',
-  meetup: 'muted',
-  recruiting: 'muted',
-  other: 'muted',
+  project: 'green',
 };
 
 const typeLabels: Record<EventType, string> = {
   hackathon: 'Hackathon',
-  open_source: 'Open Source',
-  ai_challenge: 'AI Challenge',
-  workshop: 'Workshop',
-  meetup: 'Meetup',
-  recruiting: 'Recruiting',
-  other: 'Other',
+  project: 'Project',
 };
 
 function formatDate(iso: string): string {
@@ -59,6 +49,20 @@ export function EventCard({ event }: EventCardProps) {
           {typeLabels[event.type]}
         </Badge>
       </div>
+
+      {/* Tags */}
+      {event.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {event.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[10px] text-muted bg-panel-2 border border-border px-1.5 py-0.5 rounded"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="flex items-center gap-3 mt-3 text-[11px] text-muted-2">
         <span>{formatDate(event.startsAt)} – {formatDate(event.endsAt)}</span>

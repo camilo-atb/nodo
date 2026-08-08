@@ -1,22 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useEventStore, type NodoEvent } from '@/stores/eventStore';
+import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
 import { apiFetch } from '@/lib/api';
 import { Badge } from '@/components/base/Badge';
 import { Button } from '@/components/base/Button';
 import { Spinner } from '@/components/base/Spinner';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
-import type { EventType } from '@/stores/eventStore';
 
-const typeColors: Record<EventType, 'violet' | 'green' | 'cyan' | 'amber' | 'muted'> = {
+const typeColors: Record<EventType, 'violet' | 'green'> = {
   hackathon: 'violet',
-  open_source: 'green',
-  ai_challenge: 'cyan',
-  workshop: 'amber',
-  meetup: 'muted',
-  recruiting: 'muted',
-  other: 'muted',
+  project: 'green',
+};
+
+const typeLabels: Record<EventType, string> = {
+  hackathon: 'Hackathon',
+  project: 'Project',
 };
 
 export function EventPage() {
@@ -41,7 +40,7 @@ export function EventPage() {
     try {
       await apiFetch(`/v1/events/${eventId}/join`, { method: 'POST' });
     } catch {
-      // Proceed anyway
+      // Proceed anyway — backend may not have this endpoint yet
     }
     setJoined(true);
     setJoining(false);
@@ -69,7 +68,7 @@ export function EventPage() {
       <div className="max-w-md w-full mx-4 border border-border bg-panel rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Badge color={typeColors[event.type]}>
-            {event.type.replace('_', ' ')}
+            {typeLabels[event.type]}
           </Badge>
           <span className="text-[11px] text-muted-2">
             {event.participantCount} participants
@@ -77,14 +76,28 @@ export function EventPage() {
         </div>
 
         <h1 className="text-xl font-bold text-white mb-2">{event.name}</h1>
-        <p className="text-sm text-muted mb-4">{event.description}</p>
+        <p className="text-sm text-muted mb-2">{event.description}</p>
+
+        {/* Tags */}
+        {event.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {event.tags.map((tag) => (
+              <span
+                key={tag}
+                className="text-[10px] text-muted bg-panel-2 border border-border px-1.5 py-0.5 rounded"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="text-xs text-muted-2 mb-6">
           {new Date(event.startsAt).toLocaleDateString()} – {new Date(event.endsAt).toLocaleDateString()}
         </div>
 
         <Button onClick={handleJoin} disabled={joining} className="w-full">
-          {joining ? 'Joining...' : 'Join Event'}
+          {joining ? 'Joining...' : 'Join'}
         </Button>
       </div>
     </div>
