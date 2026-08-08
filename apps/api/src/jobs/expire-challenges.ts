@@ -3,8 +3,17 @@ import type { Db } from '../db/client.js';
 import { challengeEnded } from '../domain/envelopes.js';
 import type { EventPublisher } from '../portal/event-publisher.js';
 
-/** Mismo intervalo que el barrido de sugerencias: cinco minutos (docs/12). */
+/** Cinco minutos, como el barrido de sugerencias (docs/12). */
 export const INTERVAL_MS = 5 * 60_000;
+
+/**
+ * Medio minuto de desfase para no coincidir con `expire-suggestions`.
+ *
+ * Sin él, los dos barridos disparan en el mismo tick y comparten conexión; en
+ * `pglite` eso hace chocar la sentencia preparada anónima y uno de los dos
+ * revienta con «bind message supplies N parameters».
+ */
+export const INITIAL_DELAY_MS = 30_000;
 
 /**
  * Guardarraíl 8 (docs/12): cierra los retos que nadie avanzó.
