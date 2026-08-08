@@ -1,135 +1,180 @@
 /**
  * Canvas rendering function for graph nodes.
+ * Professional design with pulsing halos, gradients, and glow effects.
  */
 
-import { getNodeColor, getNodeSize } from '@/utils/graphStyles';
+import { getNodeVisual } from '@/utils/graphStyles';
 import type { ForceNode } from '@/hooks/useGraphData';
 
+/**
+ * Draw a single node on the canvas.
+ * @param dimmed — when true, renders at very low alpha (for hover-highlight effect)
+ */
 export function drawNode(
   node: ForceNode,
   ctx: CanvasRenderingContext2D,
   globalScale: number,
+  dimmed?: boolean,
 ): void {
   const x = node.x ?? 0;
   const y = node.y ?? 0;
-  const size = getNodeSize(node.kind);
-  const color = getNodeColor(node.kind);
+  const visual = getNodeVisual(node.kind);
+  const time = performance.now();
 
   ctx.save();
 
-  // Glow effect for team and agent nodes
-  if (node.kind === 'team' || node.kind === 'agent') {
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 8;
+  if (dimmed) {
+    ctx.globalAlpha = 0.12;
   }
 
-  ctx.fillStyle = color;
-  ctx.beginPath();
+  // --- Pulsing halo (skip for skill) ---
+  if (node.kind !== 'skill') {
+    const pulsePhase = Math.sin(time / 1500) * 0.5 + 0.5; // 0..1 slow pulse
+    const haloOpacity = 0.08 + pulsePhase * 0.07; // 0.08 to 0.15
+    const haloRadius = visual.haloRadius + pulsePhase * 3;
 
+    ctx.beginPath();
+    ctx.arc(x, y, haloRadius, 0, 2 * Math.PI);
+    ctx.fillStyle = hexToRgba(visual.haloColor, haloOpacity);
+    ctx.fill();
+  }
+
+  // --- Glow filter for team/idea/agent ---
+  if (visual.glow) {
+    ctx.shadowColor = visual.fill;
+    ctx.shadowBlur = 12;
+  }
+
+  // --- Draw main body ---
   switch (node.kind) {
     case 'person':
-      // Filled circle
-      ctx.arc(x, y, size, 0, 2 * Math.PI);
-      ctx.fill();
+      drawPersonNode(ctx, x, y, visual.radius, visual.fill, visual.stroke);
       break;
 
     case 'team':
-      // Rounded square
-      drawRoundedRect(ctx, x - size, y - size, size * 2, size * 2, 2);
-      ctx.fill();
+      drawGradientCircle(ctx, x, y, visual.radius, '#5eead4', '#118e82');
       break;
 
     case 'idea':
-      // Diamond
-      ctx.moveTo(x, y - size);
-      ctx.lineTo(x + size, y);
-      ctx.lineTo(x, y + size);
-      ctx.lineTo(x - size, y);
-      ctx.closePath();
-      ctx.fill();
-      break;
-
-    case 'skill':
-      // Small dot
-      ctx.arc(x, y, size, 0, 2 * Math.PI);
-      ctx.fill();
+      drawGradientCircle(ctx, x, y, visual.radius, '#c4b5fd', '#6d4de6');
       break;
 
     case 'agent':
-      // Star shape
-      drawStar(ctx, x, y, 5, size, size * 0.5);
+      drawGradientCircle(ctx, x, y, visual.radius, '#c4b5fd', '#6d4de6');
+      // Draw ✦ character inside
+      drawAgentSymbol(ctx, x, y, visual.radius);
+      break;
+
+    case 'skill':
+      ctx.beginPath();
+      ctx.arc(x, y, visual.radius, 0, 2 * Math.PI);
+      ctx.fillStyle = visual.fill;
       ctx.fill();
       break;
   }
 
+  // Reset shadow
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+
   ctx.restore();
 
-  // Draw label (skip for skill nodes and when zoomed out)
-  if (node.kind !== 'skill' && globalScale > 0.7) {
-    const fontSize = Math.max(10 / globalScale, 3);
-    ctx.font = `${fontSize}px Inter, sans-serif`;
+  // --- Draw label ---
+  if (dimmed) {
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+  }
+
+  const shouldShowLabel =
+    node.kind !== 'skill' || globalScale > 2.5;
+
+  if (shouldShowLabel && globalScale > 0.5) {
+    const fontSize = Math.max(11 / globalScale, 3.5);
+    ctx.font = `500 ${fontSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
-    // Dark stroke for readability
-    ctx.strokeStyle = 'rgba(7, 8, 13, 0.9)';
-    ctx.lineWidth = 3 / globalScale;
-    ctx.strokeText(node.label, x, y + size + 2);
+    const labelY = y + visual.radius + 3;
 
-    // White fill
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillText(node.label, x, y + size + 2);
+    // Dark background stroke for contrast
+    ctx.strokeStyle = 'rgba(7, 8, 13, 0.95)';
+    ctx.lineWidth = 3.5 / globalScale;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(node.label, x, labelY);
+
+    // Fill with soft white
+    ctx.fillStyle = 'rgba(240, 240, 255, 0.92)';
+    ctx.fillText(node.label, x, labelY);
+  }
+
+  if (dimmed) {
+    ctx.restore();
   }
 }
 
-function drawRoundedRect(
+/** Person: dark filled circle with colored stroke ring */
+function drawPersonNode(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
-  w: number,
-  h: number,
-  r: number,
+  radius: number,
+  fill: string,
+  stroke: string,
 ): void {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
 }
 
-function drawStar(
+/** Team/Idea/Agent: filled circle with radial gradient simulation */
+function drawGradientCircle(
   ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  spikes: number,
-  outerRadius: number,
-  innerRadius: number,
+  x: number,
+  y: number,
+  radius: number,
+  colorInner: string,
+  colorOuter: string,
 ): void {
-  let rot = (Math.PI / 2) * 3;
-  const step = Math.PI / spikes;
+  const gradient = ctx.createRadialGradient(
+    x - radius * 0.3,
+    y - radius * 0.3,
+    0,
+    x,
+    y,
+    radius,
+  );
+  gradient.addColorStop(0, colorInner);
+  gradient.addColorStop(1, colorOuter);
 
   ctx.beginPath();
-  ctx.moveTo(cx, cy - outerRadius);
+  ctx.arc(x, y, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+}
 
-  for (let i = 0; i < spikes; i++) {
-    ctx.lineTo(
-      cx + Math.cos(rot) * outerRadius,
-      cy + Math.sin(rot) * outerRadius,
-    );
-    rot += step;
-    ctx.lineTo(
-      cx + Math.cos(rot) * innerRadius,
-      cy + Math.sin(rot) * innerRadius,
-    );
-    rot += step;
-  }
+/** Agent: ✦ symbol drawn inside */
+function drawAgentSymbol(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+): void {
+  const fontSize = radius * 0.9;
+  ctx.font = `${fontSize}px Inter, system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.fillText('✦', x, y + 1);
+}
 
-  ctx.lineTo(cx, cy - outerRadius);
-  ctx.closePath();
+/** Utility: convert hex color to rgba string */
+function hexToRgba(hex: string, alpha: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

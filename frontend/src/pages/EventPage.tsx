@@ -6,7 +6,6 @@ import { Badge } from '@/components/base/Badge';
 import { Button } from '@/components/base/Button';
 import { Spinner } from '@/components/base/Spinner';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { Header } from '@/components/layout/Header';
 
 const typeColors: Record<EventType, 'accent' | 'green'> = {
   hackathon: 'accent',
@@ -21,9 +20,14 @@ const typeLabels: Record<EventType, string> = {
 export function EventPage() {
   const { eventId } = useParams<{ eventId: string }>();
   const { events, setCurrentEvent } = useEventStore();
-  const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [event, setEvent] = useState<NodoEvent | null>(null);
+
+  const joinedKey = eventId ? `nodo_joined_${eventId}` : null;
+  const [joined, setJoined] = useState(() => {
+    if (!joinedKey) return false;
+    return localStorage.getItem(joinedKey) === 'true';
+  });
 
   useEffect(() => {
     if (!eventId) return;
@@ -45,13 +49,14 @@ export function EventPage() {
   }, [eventId, events, setCurrentEvent]);
 
   async function handleJoin() {
-    if (!eventId) return;
+    if (!eventId || !joinedKey) return;
     setJoining(true);
     try {
       await apiFetch(`/v1/events/${eventId}/join`, { method: 'POST' });
     } catch {
       // Proceed anyway — backend may not have this endpoint yet
     }
+    localStorage.setItem(joinedKey, 'true');
     setJoined(true);
     setJoining(false);
   }
@@ -66,8 +71,7 @@ export function EventPage() {
 
   if (joined) {
     return (
-      <div className="min-h-screen bg-bg flex flex-col">
-        <Header />
+      <div className="h-screen bg-bg flex flex-col overflow-hidden">
         <MainLayout />
       </div>
     );

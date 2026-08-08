@@ -4,6 +4,7 @@
 
 import type { GraphFilter } from '@/types/ui';
 import { getNodeColor } from '@/utils/graphStyles';
+import type { NodeKind } from '@nodo/contracts';
 
 interface GraphControlsProps {
   filter: GraphFilter;
@@ -13,7 +14,7 @@ interface GraphControlsProps {
 interface ToggleItem {
   key: keyof GraphFilter;
   label: string;
-  kind: 'person' | 'team' | 'idea' | 'skill';
+  kind: NodeKind;
 }
 
 const toggles: ToggleItem[] = [

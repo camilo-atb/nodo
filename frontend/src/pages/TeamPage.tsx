@@ -153,7 +153,7 @@ export function TeamPage() {
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Back button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => eventId ? navigate(`/event/${eventId}`) : navigate(-1)}
           className="text-sm text-muted hover:text-white transition-colors mb-6 flex items-center gap-1"
         >
           ← Back

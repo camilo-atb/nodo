@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { PeopleList } from '@/components/marketplace/PeopleList';
 import { TeamsList } from '@/components/marketplace/TeamsList';
 import { ActivityFeed } from '@/components/marketplace/ActivityFeed';
+import { IdeasList } from '@/components/marketplace/IdeasList';
 import { useEventStore, getExperienceMode } from '@/stores/eventStore';
+import { apiFetch } from '@/lib/api';
 
 type MarketplaceTab = 'people' | 'teams' | 'ideas' | 'feed' | 'contributors' | 'roles';
 
@@ -63,11 +65,7 @@ export function MarketplacePanel() {
         {/* Competition mode */}
         {activeTab === 'people' && <PeopleList />}
         {activeTab === 'teams' && <TeamsList />}
-        {activeTab === 'ideas' && (
-          <div className="flex items-center justify-center h-32 text-muted text-xs">
-            Ideas — coming soon
-          </div>
-        )}
+        {activeTab === 'ideas' && <IdeasTab />}
 
         {/* Collaboration mode */}
         {activeTab === 'contributors' && <PeopleList />}
@@ -80,6 +78,57 @@ export function MarketplacePanel() {
         {/* Shared */}
         {activeTab === 'feed' && <ActivityFeed />}
       </div>
+    </div>
+  );
+}
+
+// ─── Inline Create Idea Form + Ideas List ────────────────────────────────────
+
+function IdeasTab() {
+  const [title, setTitle] = useState('');
+  const [publishing, setPublishing] = useState(false);
+
+  async function handlePublish(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed) return;
+
+    setPublishing(true);
+    try {
+      await apiFetch('/v1/ideas', {
+        method: 'POST',
+        body: JSON.stringify({ title: trimmed, summary: null }),
+      });
+      setTitle('');
+    } catch (err) {
+      console.error('[Nodo] Failed to create idea:', err);
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Inline form */}
+      <form onSubmit={handlePublish} className="flex gap-2">
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Your idea title..."
+          className="flex-1 rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+        <button
+          type="submit"
+          disabled={publishing || !title.trim()}
+          className="px-4 py-2 rounded-lg font-semibold text-sm bg-accent text-white hover:bg-accent-2 transition-colors disabled:opacity-50"
+        >
+          {publishing ? '...' : 'Publish'}
+        </button>
+      </form>
+
+      {/* Ideas list */}
+      <IdeasList />
     </div>
   );
 }

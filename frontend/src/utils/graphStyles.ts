@@ -6,61 +6,98 @@
 
 import type { NodeKind, EdgeKind } from '@nodo/contracts';
 
-export type NodeShape = 'circle' | 'square' | 'diamond' | 'star' | 'dot';
+export interface NodeVisual {
+  fill: string;
+  stroke: string;
+  radius: number;
+  haloColor: string;
+  haloRadius: number;
+  glow: boolean;
+}
 
+/**
+ * Returns complete visual config for a node kind.
+ * Matches the graph-explorer.html reference design.
+ */
+export function getNodeVisual(kind: NodeKind): NodeVisual {
+  const visuals: Record<NodeKind, NodeVisual> = {
+    person: {
+      fill: '#171c2a',
+      stroke: '#6d7aa3',
+      radius: 16,
+      haloColor: '#6d7aa3',
+      haloRadius: 25,
+      glow: false,
+    },
+    team: {
+      fill: '#5eead4',
+      stroke: '#118e82',
+      radius: 25,
+      haloColor: '#5eead4',
+      haloRadius: 38,
+      glow: true,
+    },
+    idea: {
+      fill: '#c4b5fd',
+      stroke: '#6d4de6',
+      radius: 21,
+      haloColor: '#c4b5fd',
+      haloRadius: 32,
+      glow: true,
+    },
+    skill: {
+      fill: '#64748b',
+      stroke: '#64748b',
+      radius: 5,
+      haloColor: '#64748b',
+      haloRadius: 8,
+      glow: false,
+    },
+    agent: {
+      fill: '#c4b5fd',
+      stroke: '#6d4de6',
+      radius: 21,
+      haloColor: '#a78bfa',
+      haloRadius: 32,
+      glow: true,
+    },
+  };
+  return visuals[kind];
+}
+
+/** Legacy helper — returns the primary color for a node kind (used by controls/badges). */
 export function getNodeColor(kind: NodeKind): string {
   const colors: Record<NodeKind, string> = {
-    person: '#4c9ed9',
-    team: '#06b6d4',
-    idea: '#f59e0b',
+    person: '#6d7aa3',
+    team: '#2dd4bf',
+    idea: '#8b5cf6',
     skill: '#64748b',
     agent: '#a78bfa',
   };
-  return colors[kind] ?? '#4c9ed9';
-}
-
-export function getNodeShape(kind: NodeKind): NodeShape {
-  const shapes: Record<NodeKind, NodeShape> = {
-    person: 'circle',
-    team: 'square',
-    idea: 'diamond',
-    skill: 'dot',
-    agent: 'star',
-  };
-  return shapes[kind] ?? 'circle';
-}
-
-export function getNodeSize(kind: NodeKind): number {
-  const sizes: Record<NodeKind, number> = {
-    person: 7,
-    team: 10,
-    idea: 8,
-    skill: 4,
-    agent: 9,
-  };
-  return sizes[kind] ?? 7;
+  return colors[kind] ?? '#6d7aa3';
 }
 
 export interface LinkStyle {
   color: string;
   dashed: boolean;
   width: number;
+  opacity: number;
 }
 
 export function getLinkStyle(transient: boolean, kind?: EdgeKind): LinkStyle {
-  if (transient) {
-    return { color: '#06b6d4', dashed: true, width: 1.5 };
+  // AI suggestion edges — cyan, dashed, animated, prominent
+  if (transient || kind === 'suggested') {
+    return { color: '#06b6d4', dashed: true, width: 2, opacity: 0.8 };
   }
 
-  const widths: Partial<Record<EdgeKind, number>> = {
-    suggested: 2,
-    member_of: 1.5,
-    has_skill: 0.8,
-  };
+  if (kind === 'member_of') {
+    return { color: '#6b7aad', dashed: false, width: 1.5, opacity: 0.5 };
+  }
 
-  return {
-    color: '#4f5a85',
-    dashed: kind === 'suggested',
-    width: widths[kind as EdgeKind] ?? 1,
-  };
+  if (kind === 'has_skill') {
+    return { color: '#4f5a85', dashed: false, width: 0.7, opacity: 0.25 };
+  }
+
+  // Default edge
+  return { color: '#4f5a85', dashed: false, width: 1.2, opacity: 0.38 };
 }
