@@ -97,7 +97,7 @@ export function EventPage() {
         </div>
 
         <Button onClick={handleJoin} disabled={joining} className="w-full">
-          {joining ? 'Joining...' : 'Join'}
+          {joining ? 'Joining...' : event.type === 'project' ? 'Join Project' : 'Join Event'}
         </Button>
       </div>
     </div>

@@ -49,6 +49,29 @@ Event
 
 **Project ≈ Idea con equipo.** No hay entidad separada — una Idea con arista `spawned` ES el proyecto.
 
+### Experience Mode (competition vs collaboration)
+
+```typescript
+type EventType = 'hackathon' | 'project';
+type ExperienceMode = 'competition' | 'collaboration'; // derivado, no almacenado
+
+hackathon → competition: múltiples equipos compiten, personas buscan equipo, ideas se proponen
+project → collaboration: un proyecto central busca contributors, no hay competencia entre equipos
+```
+
+El modelo de datos es el mismo (GraphNode/GraphEdge). La diferencia es de **presentación**:
+
+| Aspecto | Hackathon (competition) | Project (collaboration) |
+|---|---|---|
+| Marketplace tabs | People · Teams · Ideas · Feed | Contributors · Roles · Feed |
+| Graph center | Ecosistema completo | Proyecto como nodo central |
+| Copy | "Find a Team", "Join Team" | "Join Project", "Contribute" |
+| Board purpose | "What should we build?" | "What should we build next?" |
+| MatchMaker | Person ↔ Team/Idea | Person ↔ Project requirements |
+| Multiple teams | Sí (compitiendo) | No (un equipo por proyecto) |
+
+Todos los componentes son reutilizables. Solo cambia el copy y qué tabs/filtros se muestran.
+
 ### Scope de evento: `network-main` con filtro lógico
 
 Se mantiene `network-main` como canal (ya funciona en el backend). El `eventId` es un filtro

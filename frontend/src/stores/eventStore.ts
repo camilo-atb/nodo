@@ -12,6 +12,17 @@ import { create } from 'zustand';
 /** Solo dos tipos reales de oportunidad. Ambos implican CONSTRUIR algo. */
 export type EventType = 'hackathon' | 'project';
 
+/**
+ * Experience mode — derivado del tipo, no almacenado.
+ * - competition: multiple teams, ideas, people looking for team (hackathon)
+ * - collaboration: one project, looking for contributors (project)
+ */
+export type ExperienceMode = 'competition' | 'collaboration';
+
+export function getExperienceMode(type: EventType): ExperienceMode {
+  return type === 'hackathon' ? 'competition' : 'collaboration';
+}
+
 export interface NodoEvent {
   id: string;
   name: string;
