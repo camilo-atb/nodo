@@ -1,21 +1,20 @@
 /**
  * Store del grafo — fuente de verdad del lado cliente.
- * Equivalente a un Service con estado (BehaviorSubject) en Angular.
  */
 
 import { create } from 'zustand';
-import type { GraphNode, GraphEdge } from '@nodo/contracts';
+import type { GraphNode, GraphEdge, GraphPatch } from '@nodo/contracts';
 
 export interface GraphState {
   nodes: Map<string, GraphNode>;
   edges: Map<string, GraphEdge>;
   lastSeq: number;
-  connectionStatus: 'idle' | 'connecting' | 'ready' | 'reconnecting' | 'degraded' | 'blocked';
+  connectionStatus: 'idle' | 'connecting' | 'ready' | 'reconnecting' | 'degraded' | 'degraded-http' | 'blocked';
 }
 
 export interface GraphActions {
   loadSnapshot: (snapshot: { nodes: GraphNode[]; edges: GraphEdge[]; seq: number }) => void;
-  applyPatch: (patch: { nodes?: GraphNode[]; edges?: GraphEdge[]; removeNodes?: string[]; removeEdges?: string[] }, seq: number) => void;
+  applyPatch: (patch: GraphPatch, seq: number) => void;
   setConnectionStatus: (status: GraphState['connectionStatus']) => void;
 }
 

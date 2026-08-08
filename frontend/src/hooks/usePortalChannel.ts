@@ -1,9 +1,93 @@
 /**
  * Hook de suscripción al canal network-main.
  * Verifica seq, aplica patch al graphStore, alimenta feedStore.
- * TODO: implementar en T-014
+ *
+ * Montar este hook ES la suscripción — no hay .subscribe() aparte.
  */
 
+import { useChannel } from '@portalsdk/react';
+import { useGraphStore } from '@/stores/graphStore';
+import { useFeedStore } from '@/stores/feedStore';
+import { usePresenceStore } from '@/stores/presenceStore';
+import { CHANNEL_NETWORK_MAIN, API_URL } from '@/lib/constants';
+import type { GraphPatch, FeedLine } from '@nodo/contracts';
+
+/**
+ * The content shape inside Portal's Message envelope.
+ * Portal wraps our domain envelope in Message<T> where T = content type.
+ */
+interface MainEventContent {
+  type?: string;
+  graph?: GraphPatch;
+  summary?: FeedLine;
+  [key: string]: unknown;
+}
+
 export function usePortalChannel() {
-  // Placeholder — se implementa cuando integremos Portal SDK
+  const { status, presence } = useChannel<MainEventContent>({
+    channelId: CHANNEL_NETWORK_MAIN,
+    history: 50,
+    onMessage: (msg) => {
+      const lastSeq = useGraphStore.getState().lastSeq;
+      // msg is Message<MainEventContent> — seq lives on msg directly
+      const seq = (msg as unknown as { seq?: number | null }).seq;
+
+      // Ephemeral messages (seq: null) — skip
+      if (seq == null) return;
+
+      // Duplicate — ignore
+      if (seq <= lastSeq) return;
+
+      // Gap detected — re-fetch snapshot
+      if (seq > lastSeq + 1) {
+        refetchSnapshot();
+        return;
+      }
+
+      // Normal: seq === lastSeq + 1
+      // msg.content is our MainEventContent
+      const content = (msg as unknown as { content?: MainEventContent }).content;
+      if (!content) return;
+
+      if (content.graph) {
+        useGraphStore.getState().applyPatch(content.graph, seq);
+      }
+
+      if (content.summary) {
+        useFeedStore.getState().addLine(content.summary);
+      }
+    },
+  });
+
+  // Sync connection status
+  if (status) {
+    const validStatuses = ['idle', 'connecting', 'ready', 'reconnecting', 'degraded', 'degraded-http', 'blocked'] as const;
+    type ConnectionStatus = (typeof validStatuses)[number];
+    if (validStatuses.includes(status as ConnectionStatus)) {
+      useGraphStore.getState().setConnectionStatus(status as ConnectionStatus);
+    }
+  }
+
+  // Sync presence
+  if (presence) {
+    if ('participants' in presence && Array.isArray((presence as { participants?: unknown }).participants)) {
+      const ids = ((presence as { participants: { id: string }[] }).participants).map((p) => p.id);
+      usePresenceStore.getState().replaceAll(ids);
+    } else if ('count' in presence && typeof (presence as { count?: unknown }).count === 'number') {
+      usePresenceStore.getState().setAggregate((presence as { count: number }).count);
+    }
+  }
+
+  return { status, presence };
+}
+
+async function refetchSnapshot() {
+  try {
+    const res = await fetch(`${API_URL}/v1/graph`);
+    if (!res.ok) return;
+    const snapshot = await res.json();
+    useGraphStore.getState().loadSnapshot(snapshot);
+  } catch {
+    // Will retry on next gap detection
+  }
 }

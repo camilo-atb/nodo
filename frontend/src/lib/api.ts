@@ -1,9 +1,10 @@
 /**
- * Cliente HTTP tipado — cumple el rol de HttpInterceptor de Angular.
- * Toda llamada REST pasa por aquí: agrega Bearer token, maneja errores globales.
+ * Cliente HTTP tipado — cumple el rol de HttpInterceptor.
+ * Toda llamada REST pasa por aquí.
  */
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { useSessionStore } from '@/stores/sessionStore';
+import { API_URL } from './constants';
 
 export class ApiError extends Error {
   constructor(
@@ -19,8 +20,6 @@ export async function apiFetch<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
-  // Import dinámico para evitar dependencias circulares
-  const { useSessionStore } = await import('@/stores/sessionStore');
   const token = useSessionStore.getState().sessionToken;
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -33,15 +32,13 @@ export async function apiFetch<T>(
   });
 
   if (res.status === 401) {
-    // TODO: redirect a onboarding (T-052)
-  }
-
-  if (res.status === 429) {
-    // TODO: toast de rate limit (T-052)
+    useSessionStore.getState().clearSession();
+    window.location.href = '/onboarding';
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, await res.json());
+    const body = await res.json().catch(() => ({ error: 'UNKNOWN', message: res.statusText }));
+    throw new ApiError(res.status, body);
   }
 
   return res.json();

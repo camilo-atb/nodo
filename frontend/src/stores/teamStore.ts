@@ -3,17 +3,17 @@
  */
 
 import { create } from 'zustand';
-import type { Application } from '@nodo/contracts';
+import type { ApplicationDTO } from '@nodo/contracts';
 
 interface TeamState {
   myTeamId: string | null;
-  applications: Application[];
-  myApplication: Application | null;
+  applications: ApplicationDTO[];
+  myApplication: ApplicationDTO | null;
   setMyTeamId: (id: string | null) => void;
-  setApplications: (apps: Application[]) => void;
-  addApplication: (app: Application) => void;
-  updateApplication: (id: string, update: Partial<Application>) => void;
-  setMyApplication: (app: Application | null) => void;
+  setApplications: (apps: ApplicationDTO[]) => void;
+  addApplication: (app: ApplicationDTO) => void;
+  updateApplication: (id: string, update: Partial<ApplicationDTO>) => void;
+  setMyApplication: (app: ApplicationDTO | null) => void;
 }
 
 export const useTeamStore = create<TeamState>((set) => ({
