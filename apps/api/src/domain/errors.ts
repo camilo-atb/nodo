@@ -63,6 +63,18 @@ export const errors = {
   boardFull: () =>
     new DomainError('BOARD_FULL', 'El tablero ya tiene el máximo de tarjetas.'),
 
+  challengeNotReady: () =>
+    new DomainError('CHALLENGE_NOT_READY', 'El reto todavía no está aprobado.'),
+
+  challengeAlreadyStarted: () =>
+    new DomainError('CHALLENGE_ALREADY_STARTED', 'El reto ya empezó: no se puede entrar tarde.'),
+
+  challengeFull: () => new DomainError('CHALLENGE_FULL', 'El reto ya tiene el máximo de participantes.'),
+
+  answerTooLate: () => new DomainError('ANSWER_TOO_LATE', 'Se acabó el tiempo de esta pregunta.'),
+
+  alreadyAnswered: () => new DomainError('ALREADY_ANSWERED', 'Ya respondiste esta pregunta.'),
+
   validation: (issues: unknown) =>
     new DomainError('VALIDATION_ERROR', 'Los datos enviados no son válidos.', { issues }),
 

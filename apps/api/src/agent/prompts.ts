@@ -83,3 +83,72 @@ export const templateRationale = (
   const skillsText = second ? `${first} y ${second}` : (first ?? 'sus skills');
   return `${personDisplayName} sabe ${skillsText}, justo lo que ${teamName} está buscando.`;
 };
+
+// ─── quizmaster (docs/12) ───────────────────────────────────────────────────
+
+/**
+ * Un reto mal generado **no degrada, corrompe**: su ranking decide a quién
+ * ficha el líder. Por eso la validación es estricta y no hay plantilla de
+ * respaldo — si el modelo no cumple, no hay reto.
+ */
+const ChallengeResponse = z.object({
+  questions: z
+    .array(
+      z.object({
+        text: z.string().min(1).max(160),
+        options: z.array(z.string().min(1).max(60)).length(4),
+        correctIndex: z.number().int().min(0).max(3),
+      }),
+    )
+    .min(1),
+});
+
+export const buildChallengeSystemPrompt = (): string =>
+  [
+    'Escribes preguntas de opción múltiple para evaluar una habilidad técnica concreta.',
+    '',
+    '- Cada pregunta con exactamente 4 opciones y una sola correcta.',
+    '- Enunciado como máximo 160 caracteres. Cada opción como máximo 60.',
+    '- Dificultad de práctica real, no de trivia ni de sintaxis memorizada.',
+    '- Nada ambiguo: dos opciones defendibles invalidan la pregunta.',
+    '- Las opciones incorrectas deben ser plausibles, no absurdas.',
+    '',
+    'Devuelve JSON: { "questions": [{ "text", "options": [4], "correctIndex" }] }',
+  ].join('\n');
+
+export const buildChallengeUserPrompt = (input: {
+  skillSlug: string;
+  skillLabel: string;
+  theme: string | null;
+  questionCount: number;
+  language: string;
+}): string =>
+  [
+    `Habilidad: ${input.skillLabel} (${input.skillSlug})`,
+    input.theme ? `Temática: ${input.theme}` : null,
+    `Número de preguntas: ${input.questionCount}`,
+    `Escribe en: ${input.language}`,
+  ]
+    .filter((line): line is string => line !== null)
+    .join('\n');
+
+/**
+ * Descarta las preguntas con opciones duplicadas: dos opciones idénticas
+ * dejarían más de una respuesta defendible y la pregunta ya no mediría nada.
+ */
+export const parseChallengeResponse = (
+  raw: string,
+  expected: number,
+): Array<{ text: string; options: [string, string, string, string]; correctIndex: number }> => {
+  const parsed = ChallengeResponse.safeParse(JSON.parse(raw));
+  if (!parsed.success) return [];
+
+  return parsed.data.questions
+    .filter((q) => new Set(q.options.map((o) => o.trim().toLowerCase())).size === 4)
+    .slice(0, expected)
+    .map((q) => ({
+      text: q.text,
+      options: q.options as [string, string, string, string],
+      correctIndex: q.correctIndex,
+    }));
+};

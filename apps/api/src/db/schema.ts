@@ -333,3 +333,106 @@ export const boardVotes = pgTable(
   },
   (t) => [primaryKey({ columns: [t.cardId, t.personId] })],
 );
+
+// ─── Skill Challenge (docs/12) ──────────────────────────────────────────────
+
+/**
+ * `current_question` y `question_started_at` son lo que hace que el reto
+ * sobreviva a un redespliegue (ADR-012): el estado vive aquí y no en un
+ * temporizador en memoria, así que el siguiente `advance` lo continúa.
+ */
+export const challenges = pgTable(
+  'challenges',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    skillSlug: text('skill_slug')
+      .notNull()
+      .references(() => skills.slug),
+    title: text('title').notNull(),
+    status: text('status').notNull().default('draft'),
+    durationSec: integer('duration_sec').notNull().default(20),
+    currentQuestion: integer('current_question'),
+    questionStartedAt: timestamp('question_started_at', { withTimezone: true }),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'challenges_status_check',
+      sql`${t.status} in ('draft','waiting','question','reviewing','ended')`,
+    ),
+    // Un reto vivo por equipo y skill: dos a la vez repartirían a los
+    // solicitantes entre dos rankings que no se pueden comparar.
+    uniqueIndex('one_live_challenge_per_team_skill')
+      .on(t.teamId, t.skillSlug)
+      .where(sql`${t.status} in ('waiting','question','reviewing')`),
+    index('challenges_status_expires_idx').on(t.status, t.expiresAt),
+  ],
+);
+
+export const challengeQuestions = pgTable(
+  'challenge_questions',
+  {
+    id: text('id').primaryKey(),
+    challengeId: text('challenge_id')
+      .notNull()
+      .references(() => challenges.id, { onDelete: 'cascade' }),
+    position: integer('position').notNull(),
+    text: text('text').notNull(),
+    options: text('options').array().notNull(),
+    /** Solo existe aquí. Nunca viaja en el sobre de la pregunta (docs/12). */
+    correctIndex: integer('correct_index').notNull(),
+  },
+  (t) => [
+    uniqueIndex('challenge_questions_position_idx').on(t.challengeId, t.position),
+    check('challenge_questions_correct_check', sql`${t.correctIndex} between 0 and 3`),
+  ],
+);
+
+export const challengeEntries = pgTable(
+  'challenge_entries',
+  {
+    challengeId: text('challenge_id')
+      .notNull()
+      .references(() => challenges.id, { onDelete: 'cascade' }),
+    personId: text('person_id')
+      .notNull()
+      .references(() => people.id, { onDelete: 'cascade' }),
+    score: integer('score').notNull().default(0),
+    answeredCount: integer('answered_count').notNull().default(0),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Abandonar conserva el puntaje acumulado: no hay penalización. */
+    leftAt: timestamp('left_at', { withTimezone: true }),
+  },
+  (t) => [primaryKey({ columns: [t.challengeId, t.personId] })],
+);
+
+/** Una respuesta por persona y pregunta: la segunda es `ALREADY_ANSWERED`. */
+export const challengeAnswers = pgTable(
+  'challenge_answers',
+  {
+    id: text('id').primaryKey(),
+    challengeId: text('challenge_id')
+      .notNull()
+      .references(() => challenges.id, { onDelete: 'cascade' }),
+    personId: text('person_id')
+      .notNull()
+      .references(() => people.id, { onDelete: 'cascade' }),
+    questionIndex: integer('question_index').notNull(),
+    answerIndex: integer('answer_index').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+    points: integer('points').notNull(),
+  },
+  (t) => [
+    uniqueIndex('one_answer_per_person_question').on(
+      t.challengeId,
+      t.personId,
+      t.questionIndex,
+    ),
+  ],
+);

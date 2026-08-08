@@ -1,10 +1,13 @@
 import OpenAI from 'openai';
-import type { LlmProvider, RationaleInput } from './llm.js';
+import type { ChallengeInput, DraftQuestion, LlmProvider, RationaleInput } from './llm.js';
 import {
   buildExtractionSystemPrompt,
   buildExtractionUserPrompt,
+  buildChallengeSystemPrompt,
+  buildChallengeUserPrompt,
   buildRationaleSystemPrompt,
   buildRationaleUserPrompt,
+  parseChallengeResponse,
   parseExtractionResponse,
   parseRationaleResponse,
 } from './prompts.js';
@@ -53,12 +56,32 @@ export class GroqLlmProvider implements LlmProvider {
     if (rationale === undefined) throw new Error('El LLM no devolvió un rationale válido.');
     return rationale;
   }
+
+  /** `quizmaster` (docs/12). Mismo cliente, mismo modelo, misma credencial. */
+  async generateChallenge(input: ChallengeInput): Promise<DraftQuestion[]> {
+    const completion = await this.client.chat.completions.create({
+      model: this.model,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: buildChallengeSystemPrompt() },
+        { role: 'user', content: buildChallengeUserPrompt(input) },
+      ],
+    });
+    const content = completion.choices[0]?.message.content ?? '{"questions":[]}';
+    const questions = parseChallengeResponse(content, input.questionCount);
+    if (questions.length === 0) {
+      // Sin fallback a propósito: mejor sin reto que con uno que mide ruido.
+      throw new Error('El LLM no devolvió preguntas válidas.');
+    }
+    return questions;
+  }
 }
 
 /** Envuelve cualquier `LlmProvider` con el timeout de docs/06 (`LLM_TIMEOUT_MS`). */
 export const withTimeout = (provider: LlmProvider, timeoutMs: number): LlmProvider => ({
   extractSkills: (text) => race(provider.extractSkills(text), timeoutMs),
   writeRationale: (input) => race(provider.writeRationale(input), timeoutMs),
+  generateChallenge: (input) => race(provider.generateChallenge(input), timeoutMs),
 });
 
 const race = <T>(promise: Promise<T>, timeoutMs: number): Promise<T> =>

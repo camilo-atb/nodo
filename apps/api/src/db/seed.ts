@@ -34,6 +34,13 @@ const seedVocabulary = async (db: ReturnType<typeof createDb>['db']): Promise<vo
     .insert(nodes)
     .values({ id: 'matchmaker', kind: 'agent', label: 'MatchMaker' })
     .onConflictDoNothing();
+  // `quizmaster` (docs/12): el segundo actor del dominio. No trae credenciales
+  // nuevas — comparte `LlmProvider`, `LLM_API_KEY` y `LLM_MODEL` con el
+  // matchmaker. Es un nodo `agent` más, así que `NodeKind` no cambia.
+  await db
+    .insert(nodes)
+    .values({ id: 'quizmaster', kind: 'agent', label: 'QuizMaster' })
+    .onConflictDoNothing();
 
   console.log(`[seed] vocabulario: ${SKILLS.length} skills, ${SKILL_ALIASES.length} alias.`);
 };

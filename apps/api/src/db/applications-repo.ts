@@ -1,6 +1,7 @@
 import { edgeId, type ApplicationDTO, type ApplicationStatus } from '@nodo/contracts';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from './client.js';
+import { lastResultFor } from './challenges-repo.js';
 import { edges, people, suggestions, teams } from './schema.js';
 import { toApplicationDTO, toPersonRef } from '../domain/mappers.js';
 
@@ -70,13 +71,33 @@ export const findPendingApplication = async (
   return pending ? toDTO(db, pending) : undefined;
 };
 
+/**
+ * La bandeja del líder, **ordenada por el resultado del reto** (docs/12).
+ *
+ * El ranking ordena y marca al primero; no acepta, no rechaza y no descarta.
+ * Quien no participó queda al final con `null`, no con un cero: no es lo
+ * mismo haber fallado que no haber jugado.
+ */
 export const listApplicationsForTeam = async (db: Db, teamId: string): Promise<ApplicationDTO[]> => {
   const rows = await db
     .select({ id: edges.id, fromId: edges.fromId, toId: edges.toId, meta: edges.meta, createdAt: edges.createdAt })
     .from(edges)
     .where(and(eq(edges.kind, 'applied_to'), eq(edges.toId, teamId)));
-  const dtos = await Promise.all(rows.map((r) => toDTO(db, r)));
-  return dtos.filter((d): d is ApplicationDTO => d !== undefined);
+
+  const dtos = await Promise.all(
+    rows.map(async (r) => {
+      const dto = await toDTO(db, r);
+      if (!dto) return undefined;
+      const result = await lastResultFor(db, teamId, dto.person.id);
+      return result
+        ? { ...dto, challengeScore: result.score, challengeRank: result.position }
+        : dto;
+    }),
+  );
+
+  return dtos
+    .filter((d): d is ApplicationDTO => d !== undefined)
+    .sort((a, b) => (b.challengeScore ?? -1) - (a.challengeScore ?? -1));
 };
 
 /** Para el claim `teams` del JWT de Portal: equipos donde la persona tiene una solicitud `pending`. */

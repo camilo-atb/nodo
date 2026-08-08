@@ -204,6 +204,12 @@ export const ErrorCode = z.enum([
   'RATE_LIMITED',
   // Tablero (docs/11)
   'BOARD_FULL',
+  // Reto (docs/12)
+  'CHALLENGE_NOT_READY',
+  'CHALLENGE_ALREADY_STARTED',
+  'CHALLENGE_FULL',
+  'ANSWER_TOO_LATE',
+  'ALREADY_ANSWERED',
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 
@@ -228,6 +234,11 @@ export const HTTP_STATUS_BY_ERROR: Record<ErrorCode, number> = {
   VALIDATION_ERROR: 422,
   RATE_LIMITED: 429,
   BOARD_FULL: 409,
+  CHALLENGE_NOT_READY: 409,
+  CHALLENGE_ALREADY_STARTED: 409,
+  CHALLENGE_FULL: 409,
+  ANSWER_TOO_LATE: 409,
+  ALREADY_ANSWERED: 409,
 };
 
 // ─── Contenedor (ADR-013) ───────────────────────────────────────────────────

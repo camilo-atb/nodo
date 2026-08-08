@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { BoardCard } from './board.js';
+import { ChallengeQuestion, LeaderboardRow } from './challenge.js';
 import { ApplicationDTO, IdeaDTO, PersonDTO, SuggestionDTO, TeamDTO } from './dto.js';
 import { mainEnvelope, teamEnvelope, type NoGraph } from './envelope.js';
 import {
   CardId,
+  EpochMs,
   NeedRef,
   PersonId,
   PersonRef,
@@ -150,5 +152,43 @@ export const TeamEvent = z.discriminatedUnion('type', [
 ]);
 export type TeamEvent = NoGraph<z.infer<typeof TeamEvent>>;
 
-export const AnyEvent = z.union([MainEvent, TeamEvent]);
-export type AnyEvent = MainEvent | TeamEvent;
+// ─── Reto (docs/12) ─────────────────────────────────────────────────────────
+// Canal `challenge-{teamId}-{challengeId}`, en modo broadcast.
+
+/** `endsAt` es el plazo como dato (ADR-012): el cliente descuenta en local. */
+export const ChallengeQuestionRevealed = teamEnvelope(
+  'challenge.question_revealed',
+  z.object({
+    questionIndex: z.number().int().nonnegative(),
+    question: ChallengeQuestion,
+    endsAt: EpochMs,
+  }),
+);
+
+/**
+ * `correctIndex` aparece **aquí y no antes**: cuando este sobre se publica, la
+ * pregunta ya cerró para todos y revelarla deja de ser una filtración.
+ */
+export const ChallengeLeaderboardUpdate = teamEnvelope(
+  'challenge.leaderboard_update',
+  z.object({
+    questionIndex: z.number().int().nonnegative(),
+    correctIndex: z.number().int().min(0).max(3),
+    rankings: z.array(LeaderboardRow),
+  }),
+);
+
+export const ChallengeEnded = teamEnvelope(
+  'challenge.ended',
+  z.object({ rankings: z.array(LeaderboardRow) }),
+);
+
+export const ChallengeEvent = z.discriminatedUnion('type', [
+  ChallengeQuestionRevealed,
+  ChallengeLeaderboardUpdate,
+  ChallengeEnded,
+]);
+export type ChallengeEvent = NoGraph<z.infer<typeof ChallengeEvent>>;
+
+export const AnyEvent = z.union([MainEvent, TeamEvent, ChallengeEvent]);
+export type AnyEvent = MainEvent | TeamEvent | ChallengeEvent;

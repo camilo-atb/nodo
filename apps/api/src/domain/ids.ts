@@ -41,6 +41,9 @@ export const suggestionId = (): string => `sug_${ulid()}`;
 export const nodoEventId = (): string => `ev_${ulid()}`;
 export const boardId = (): string => `brd_${ulid()}`;
 export const cardId = (): string => `card_${ulid()}`;
+export const challengeId = (): string => `chl_${ulid()}`;
+export const questionId = (): string => `qst_${ulid()}`;
+export const answerId = (): string => `ans_${ulid()}`;
 export const eventId = (): string => `evt_${ulid()}`;
 
 /** Credencial de sesión opaca. 256 bits, nunca sale en un DTO. */

@@ -40,6 +40,9 @@ const EnvSchema = z.object({
   MATCH_MAX_PER_TEAM: z.coerce.number().int().positive().default(5),
   SUGGESTION_TTL_MINUTES: z.coerce.number().int().positive().default(120),
 
+  // Reto (docs/12). Ajustables sin desplegar, como los del matchmaker.
+  CHALLENGE_TTL_MINUTES: z.coerce.number().int().positive().default(60),
+
   /** Límite por sesión de docs/05. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(60),
 });

@@ -95,6 +95,16 @@ export const ApplicationDTO = z.object({
   leadId: PersonId,
   status: ApplicationStatus,
   message: z.string().nullable(),
+  /**
+   * Resultado del último reto de esta persona en este equipo (docs/12).
+   *
+   * **Ordenan la bandeja del líder, no deciden nada.** Aceptar sigue siendo un
+   * acto explícito: es la única operación que dispara el invariante 5 completo
+   * y automatizarla desde un juego convertiría cada empate o desconexión en
+   * una escritura irreversible que nadie autorizó.
+   */
+  challengeScore: z.number().int().nonnegative().nullable(),
+  challengeRank: z.number().int().positive().nullable(),
   createdAt: EpochMs,
   resolvedAt: EpochMs.nullable(),
 });

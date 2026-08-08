@@ -29,6 +29,13 @@
       "when": 1786197096577,
       "tag": "0003_numerous_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786197834792,
+      "tag": "0004_black_the_stranger",
+      "breakpoints": true
     }
   ]
 }

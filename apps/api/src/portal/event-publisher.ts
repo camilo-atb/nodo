@@ -1,4 +1,12 @@
-import { MAIN_CHANNEL, teamChannel, type MainEvent, type TeamEvent } from '@nodo/contracts';
+import {
+  MAIN_CHANNEL,
+  challengeChannel,
+  teamChannel,
+  type AnyEvent,
+  type ChallengeEvent,
+  type MainEvent,
+  type TeamEvent,
+} from '@nodo/contracts';
 import { sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
 import { channelWatermarks, outbox } from '../db/schema.js';
@@ -15,7 +23,7 @@ export interface WatermarkStore {
 }
 
 export interface OutboxStore {
-  enqueue(channel: string, envelope: MainEvent | TeamEvent): Promise<void>;
+  enqueue(channel: string, envelope: AnyEvent): Promise<void>;
 }
 
 export class DrizzleWatermarkStore implements WatermarkStore {
@@ -35,7 +43,7 @@ export class DrizzleWatermarkStore implements WatermarkStore {
 export class DrizzleOutboxStore implements OutboxStore {
   constructor(private readonly db: Db) {}
 
-  async enqueue(channel: string, envelope: MainEvent | TeamEvent): Promise<void> {
+  async enqueue(channel: string, envelope: AnyEvent): Promise<void> {
     await this.db.insert(outbox).values({ channel, envelope });
   }
 }
@@ -66,9 +74,23 @@ export class EventPublisher {
     await this.publish(teamChannel(teamId), envelope, { isMain: false });
   }
 
+  /**
+   * Canal del reto (docs/12). Lleva el `teamId` dentro por obligación:
+   * `authz` corre en Portal sin base de datos y no puede traducir un id de
+   * reto a un equipo. Tampoco lleva marca de agua — sus sobres no mutan
+   * estado que un snapshot deba reconciliar.
+   */
+  async publishChallenge(
+    teamId: string,
+    challengeId: string,
+    envelope: ChallengeEvent,
+  ): Promise<void> {
+    await this.publish(challengeChannel(teamId, challengeId), envelope, { isMain: false });
+  }
+
   private async publish(
     channel: string,
-    envelope: MainEvent | TeamEvent,
+    envelope: MainEvent | TeamEvent | ChallengeEvent,
     opts: { isMain: boolean },
   ): Promise<void> {
     try {

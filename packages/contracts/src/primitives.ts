@@ -27,6 +27,7 @@ export const DomainEventId = prefixedId('evt');
 export const EventId = prefixedId('ev');
 export const BoardId = prefixedId('brd');
 export const CardId = prefixedId('card');
+export const ChallengeId = prefixedId('chl');
 
 export type PersonId = z.infer<typeof PersonId>;
 export type TeamId = z.infer<typeof TeamId>;
@@ -37,6 +38,7 @@ export type DomainEventId = z.infer<typeof DomainEventId>;
 export type EventId = z.infer<typeof EventId>;
 export type BoardId = z.infer<typeof BoardId>;
 export type CardId = z.infer<typeof CardId>;
+export type ChallengeId = z.infer<typeof ChallengeId>;
 
 /** Fechas: epoch en milisegundos. Nunca `Date` ni ISO string (docs/09). */
 export const EpochMs = z.number().int().nonnegative();

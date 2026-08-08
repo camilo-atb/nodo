@@ -20,7 +20,34 @@ export type RationaleInput = {
   language: string;
 };
 
+/**
+ * Entrada de `quizmaster` (docs/12).
+ *
+ * `quizmaster` es un **actor del dominio**, no una credencial: comparte esta
+ * misma interfaz, la misma `LLM_API_KEY` y el mismo `LLM_MODEL` que el
+ * matchmaker. Lo único que añade es este tercer método.
+ */
+export type ChallengeInput = {
+  skillSlug: string;
+  skillLabel: string;
+  theme: string | null;
+  questionCount: number;
+  language: string;
+};
+
+export type DraftQuestion = {
+  text: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+};
+
 export interface LlmProvider {
   extractSkills(text: string): Promise<RawExtractedSkill[]>;
   writeRationale(input: RationaleInput): Promise<string>;
+  /**
+   * Genera el borrador de un reto. **No hay fallback de plantilla**: a
+   * diferencia del rationale, una pregunta mal generada no degrada un texto,
+   * corrompe la selección. Si falla, no hay reto (docs/12).
+   */
+  generateChallenge(input: ChallengeInput): Promise<DraftQuestion[]>;
 }

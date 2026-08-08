@@ -144,6 +144,8 @@ export const toApplicationDTO = (input: {
   leadId: string;
   status: ApplicationStatus;
   message: string | null;
+  challengeScore?: number | null;
+  challengeRank?: number | null;
   createdAt: Date | number;
   resolvedAt: Date | number | null;
 }): ApplicationDTO => ({
@@ -154,6 +156,8 @@ export const toApplicationDTO = (input: {
   leadId: input.leadId,
   status: input.status,
   message: input.message,
+  challengeScore: input.challengeScore ?? null,
+  challengeRank: input.challengeRank ?? null,
   createdAt: epoch(input.createdAt),
   resolvedAt: input.resolvedAt === null ? null : epoch(input.resolvedAt),
 });

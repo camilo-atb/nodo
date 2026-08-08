@@ -52,6 +52,8 @@ const application = {
   leadId: 'per_laura',
   status: 'pending',
   message: null,
+  challengeScore: null,
+  challengeRank: null,
   createdAt: 1754600000000,
   resolvedAt: null,
 };

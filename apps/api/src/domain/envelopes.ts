@@ -1,9 +1,14 @@
 import {
   AGENT_DISPLAY_NAME,
   AGENT_ID,
+  QUIZMASTER_DISPLAY_NAME,
+  QUIZMASTER_ID,
   edgeId,
   type ActorRef,
   type BoardCard,
+  type ChallengeEvent,
+  type ChallengeQuestion,
+  type LeaderboardRow,
   type ApplicationDTO,
   type GraphPatch,
   type IdeaDTO,
@@ -413,4 +418,48 @@ export const boardWinnerSelected = (actor: ActorRef, cardId: string): TeamEvent 
   type: 'board.winner_selected',
   payload: { cardId },
   summary: { text: 'El equipo eligió una idea ganadora', icon: '🏆', refs: [] },
+});
+
+// ─── Reto (docs/12) ─────────────────────────────────────────────────────────
+// Los publica `quizmaster`, actor de dominio con identidad propia en el feed.
+
+const quizmasterActor: ActorRef = {
+  kind: 'agent',
+  id: QUIZMASTER_ID,
+  displayName: QUIZMASTER_DISPLAY_NAME,
+};
+
+/** `endsAt` es el plazo como dato (ADR-012). Nadie programa un temporizador. */
+export const challengeQuestionRevealed = (
+  questionIndex: number,
+  question: ChallengeQuestion,
+  endsAt: number,
+): ChallengeEvent => ({
+  ...base(quizmasterActor),
+  type: 'challenge.question_revealed',
+  payload: { questionIndex, question, endsAt },
+  summary: { text: `Pregunta ${questionIndex + 1}`, icon: '⏱️', refs: [] },
+});
+
+/**
+ * `correctIndex` aparece aquí y en ningún sitio antes: cuando este sobre se
+ * publica, la pregunta ya cerró para todos y revelarla deja de ser una
+ * filtración (docs/12).
+ */
+export const challengeLeaderboardUpdate = (
+  questionIndex: number,
+  correctIndex: number,
+  rankings: LeaderboardRow[],
+): ChallengeEvent => ({
+  ...base(quizmasterActor),
+  type: 'challenge.leaderboard_update',
+  payload: { questionIndex, correctIndex, rankings },
+  summary: { text: 'Ranking actualizado', icon: '📊', refs: [] },
+});
+
+export const challengeEnded = (rankings: LeaderboardRow[]): ChallengeEvent => ({
+  ...base(quizmasterActor),
+  type: 'challenge.ended',
+  payload: { rankings },
+  summary: { text: 'El reto terminó', icon: '🏁', refs: [] },
 });
