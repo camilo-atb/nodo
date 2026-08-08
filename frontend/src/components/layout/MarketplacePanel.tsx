@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PeopleList } from '@/components/marketplace/PeopleList';
 import { TeamsList } from '@/components/marketplace/TeamsList';
+import { ActivityFeed } from '@/components/marketplace/ActivityFeed';
 import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 
 type MarketplaceTab = 'people' | 'teams' | 'ideas' | 'feed' | 'contributors' | 'roles';
@@ -77,11 +78,7 @@ export function MarketplacePanel() {
         )}
 
         {/* Shared */}
-        {activeTab === 'feed' && (
-          <div className="flex items-center justify-center h-32 text-muted text-xs">
-            Feed — coming soon
-          </div>
-        )}
+        {activeTab === 'feed' && <ActivityFeed />}
       </div>
     </div>
   );

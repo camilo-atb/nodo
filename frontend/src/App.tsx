@@ -8,6 +8,7 @@ import { TeamPage } from '@/pages/TeamPage';
 import { ChallengePage } from '@/pages/ChallengePage';
 import { BoardPage } from '@/pages/BoardPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { RequireSession } from '@/routes/guards/RequireSession';
 
 export function App() {
@@ -24,10 +25,11 @@ export function App() {
           <Route path="/discover" element={<DiscoverPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<RequireSession />}>
-            <Route path="/event/:eventId/*" element={<EventPage />} />
+            <Route path="/event/:eventId/profile/:personId" element={<ProfilePage />} />
             <Route path="/event/:eventId/team/:teamId" element={<TeamPage />} />
             <Route path="/event/:eventId/team/:teamId/board" element={<BoardPage />} />
             <Route path="/event/:eventId/challenge/:challengeId" element={<ChallengePage />} />
+            <Route path="/event/:eventId/*" element={<EventPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/base/Card';
 import { Badge } from '@/components/base/Badge';
 import { useGraphStore } from '@/stores/graphStore';
+import { useEventStore } from '@/stores/eventStore';
 import type { GraphNode } from '@nodo/contracts';
 
 interface TeamCardProps {
@@ -8,8 +10,10 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team }: TeamCardProps) {
+  const navigate = useNavigate();
   const edges = useGraphStore((s) => s.edges);
   const nodes = useGraphStore((s) => s.nodes);
+  const eventId = useEventStore((s) => s.currentEventId);
 
   // Count members
   let memberCount = 0;
@@ -31,7 +35,7 @@ export function TeamCard({ team }: TeamCardProps) {
   const statusColor = team.status === 'recruiting' ? 'green' : 'muted';
 
   return (
-    <Card className="cursor-pointer">
+    <Card className="cursor-pointer" onClick={() => eventId && navigate(`/event/${eventId}/team/${team.id}`)}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

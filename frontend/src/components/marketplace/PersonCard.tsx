@@ -1,8 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/base/Card';
 import { Badge } from '@/components/base/Badge';
 import { Avatar } from '@/components/base/Avatar';
 import { usePresenceStore } from '@/stores/presenceStore';
 import { useGraphStore } from '@/stores/graphStore';
+import { useEventStore } from '@/stores/eventStore';
 import type { GraphNode } from '@nodo/contracts';
 
 interface PersonCardProps {
@@ -10,9 +12,11 @@ interface PersonCardProps {
 }
 
 export function PersonCard({ person }: PersonCardProps) {
+  const navigate = useNavigate();
   const online = usePresenceStore((s) => s.online);
   const edges = useGraphStore((s) => s.edges);
   const nodes = useGraphStore((s) => s.nodes);
+  const eventId = useEventStore((s) => s.currentEventId);
 
   const isOnline = online.has(person.id);
 
@@ -30,7 +34,7 @@ export function PersonCard({ person }: PersonCardProps) {
   return (
     <Card
       className="cursor-pointer"
-      onClick={() => console.log(`Navigate to profile: ${person.id}`)}
+      onClick={() => eventId && navigate(`/event/${eventId}/profile/${person.id}`)}
     >
       <div className="flex items-start gap-3">
         <div className="relative">
