@@ -1,6 +1,7 @@
 import { loadEnv } from '../config.js';
 import { createDb } from './client.js';
-import { nodes, skillAliases, skills } from './schema.js';
+import { eq } from 'drizzle-orm';
+import { nodes, people, skillAliases, skills } from './schema.js';
 import { SKILLS, SKILL_ALIASES } from './vocabulary.js';
 import { createPerson } from './people-repo.js';
 import { addMember, createTeam, deriveAndPersistTeamStatus } from './teams-repo.js';
@@ -80,6 +81,21 @@ const seedPerson = async (
 };
 
 /** Conjunto representativo, solo desarrollo: variedad de estados y categorías. */
+/**
+ * El conjunto representativo usa handles fijos, así que **no es idempotente**:
+ * reinsertarlo choca con `people_handle_unique`. Se comprueba antes en vez de
+ * envolver cada inserción en `onConflictDoNothing`, porque a medias sería peor
+ * que no estar: quedarían equipos sin líder y aristas colgando.
+ *
+ * Para regenerarlo, se borran los datos y se vuelve a sembrar (docs/08).
+ */
+const representativeSetExists = async (
+  db: ReturnType<typeof createDb>['db'],
+): Promise<boolean> => {
+  const [row] = await db.select({ id: people.id }).from(people).where(eq(people.handle, 'laura'));
+  return row !== undefined;
+};
+
 const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Promise<void> => {
   const laura = await seedPerson(db, {
     handle: 'laura',
@@ -218,7 +234,11 @@ const main = async (): Promise<void> => {
   await seedVocabulary(db);
   await seedDefaultEvent(db);
   if (env.NODE_ENV !== 'production') {
-    await seedRepresentativeSet(db);
+    if (await representativeSetExists(db)) {
+      console.log('[seed] conjunto representativo: ya estaba, no se toca.');
+    } else {
+      await seedRepresentativeSet(db);
+    }
   }
 
   await sql.end();

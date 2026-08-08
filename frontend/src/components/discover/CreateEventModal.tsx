@@ -33,9 +33,10 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
         body: JSON.stringify({
           name,
           description,
-          type,
-          startsAt: new Date(startDate).toISOString(),
-          endsAt: new Date(endDate).toISOString(),
+          kind: type,
+          // Epoch ms, nunca ISO string: es la convención del contrato (docs/09).
+          startsAt: startDate ? new Date(startDate).getTime() : null,
+          endsAt: endDate ? new Date(endDate).getTime() : null,
         }),
       });
       addEvent(created);

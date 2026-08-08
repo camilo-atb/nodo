@@ -67,8 +67,8 @@ export function EventPage() {
     <div className="min-h-screen bg-bg flex items-center justify-center">
       <div className="max-w-md w-full mx-4 border border-border bg-panel rounded-2xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Badge color={typeColors[event.type]}>
-            {typeLabels[event.type]}
+          <Badge color={typeColors[event.kind]}>
+            {typeLabels[event.kind]}
           </Badge>
           <span className="text-[11px] text-muted-2">
             {event.participantCount} participants
@@ -93,11 +93,16 @@ export function EventPage() {
         )}
 
         <div className="text-xs text-muted-2 mb-6">
-          {new Date(event.startsAt).toLocaleDateString()} – {new Date(event.endsAt).toLocaleDateString()}
+          {/* Un `project` no tiene fechas (ADR-013): son nulables. */}
+          {event.startsAt === null && event.endsAt === null
+            ? 'Sin fechas'
+            : `${event.startsAt === null ? '—' : new Date(event.startsAt).toLocaleDateString()} – ${
+                event.endsAt === null ? '—' : new Date(event.endsAt).toLocaleDateString()
+              }`}
         </div>
 
         <Button onClick={handleJoin} disabled={joining} className="w-full">
-          {joining ? 'Joining...' : event.type === 'project' ? 'Join Project' : 'Join Event'}
+          {joining ? 'Joining...' : event.kind === 'project' ? 'Join Project' : 'Join Event'}
         </Button>
       </div>
     </div>

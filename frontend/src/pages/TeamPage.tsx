@@ -33,7 +33,7 @@ export function TeamPage() {
   const personId = useSessionStore((s) => s.personId);
   const myApplication = useTeamStore((s) => s.myApplication);
   const currentEvent = useEventStore((s) => s.events.find((e) => e.id === s.currentEventId));
-  const mode = currentEvent ? getExperienceMode(currentEvent.type) : 'competition';
+  const mode = currentEvent ? getExperienceMode(currentEvent.kind) : 'competition';
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
 

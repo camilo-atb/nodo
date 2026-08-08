@@ -9,7 +9,10 @@
 
 import { create } from 'zustand';
 
-/** Solo dos tipos reales de oportunidad. Ambos implican CONSTRUIR algo. */
+/**
+ * Solo dos tipos reales de oportunidad. Ambos implican CONSTRUIR algo.
+ * Se llama `kind` en el contrato, como `NodeKind` y `EdgeKind` (ADR-013).
+ */
 export type EventType = 'hackathon' | 'project';
 
 /**
@@ -19,20 +22,22 @@ export type EventType = 'hackathon' | 'project';
  */
 export type ExperienceMode = 'competition' | 'collaboration';
 
-export function getExperienceMode(type: EventType): ExperienceMode {
-  return type === 'hackathon' ? 'competition' : 'collaboration';
+export function getExperienceMode(kind: EventType): ExperienceMode {
+  return kind === 'hackathon' ? 'competition' : 'collaboration';
 }
 
+/** Espeja `EventDTO` de `@nodo/contracts`: fechas en epoch ms y `kind`. */
 export interface NodoEvent {
   id: string;
   name: string;
-  description: string;
-  type: EventType;
+  description: string | null;
+  kind: EventType;
   tags: string[];
-  startsAt: string;
-  endsAt: string;
-  status: string;
+  /** `null` en un `project`: no tiene fechas. */
+  startsAt: number | null;
+  endsAt: number | null;
   participantCount: number;
+  createdAt: number;
 }
 
 interface EventState {

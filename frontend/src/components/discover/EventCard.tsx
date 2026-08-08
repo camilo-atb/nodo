@@ -17,14 +17,16 @@ const typeLabels: Record<EventType, string> = {
   project: 'Project',
 };
 
-function formatDate(iso: string): string {
+/** Epoch ms, o `null` en un `project`, que no tiene fechas (ADR-013). */
+function formatDate(epochMs: number | null): string {
+  if (epochMs === null) return '—';
   try {
-    return new Date(iso).toLocaleDateString('en-US', {
+    return new Date(epochMs).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
   } catch {
-    return iso;
+    return '—';
   }
 }
 
@@ -45,8 +47,8 @@ export function EventCard({ event }: EventCardProps) {
             {event.description}
           </p>
         </div>
-        <Badge color={typeColors[event.type]}>
-          {typeLabels[event.type]}
+        <Badge color={typeColors[event.kind]}>
+          {typeLabels[event.kind]}
         </Badge>
       </div>
 

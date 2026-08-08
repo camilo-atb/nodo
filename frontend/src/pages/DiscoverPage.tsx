@@ -11,34 +11,34 @@ const MOCK_EVENTS: NodoEvent[] = [
     id: 'mock-1',
     name: 'Realtime AI Hackathon',
     description: 'Build AI-powered realtime tools in 48 hours. Teams of 2-4, prizes for top 3.',
-    type: 'hackathon',
+    kind: 'hackathon',
     tags: ['AI', 'Open Source'],
-    startsAt: '2026-08-08T09:00:00Z',
-    endsAt: '2026-08-10T18:00:00Z',
-    status: 'active',
+    startsAt: new Date('2026-08-08T09:00:00Z').getTime(),
+    endsAt: new Date('2026-08-10T18:00:00Z').getTime(),
     participantCount: 42,
+    createdAt: Date.now(),
   },
   {
     id: 'mock-2',
     name: 'Health AI Platform',
     description: 'Open source platform for AI-assisted triage in rural clinics. Looking for contributors.',
-    type: 'project',
+    kind: 'project',
     tags: ['AI', 'Healthcare', 'Open Source'],
-    startsAt: '2026-08-01T00:00:00Z',
-    endsAt: '2026-12-31T23:59:00Z',
-    status: 'active',
+    startsAt: new Date('2026-08-01T00:00:00Z').getTime(),
+    endsAt: new Date('2026-12-31T23:59:00Z').getTime(),
     participantCount: 12,
+    createdAt: Date.now(),
   },
   {
     id: 'mock-3',
     name: 'Developer Tools Hackathon',
     description: 'Build the next great developer tool. CLI, IDE extensions, code generators — anything goes.',
-    type: 'hackathon',
+    kind: 'hackathon',
     tags: ['Developer Tools', 'Web'],
-    startsAt: '2026-08-15T08:00:00Z',
-    endsAt: '2026-08-17T23:59:00Z',
-    status: 'active',
+    startsAt: new Date('2026-08-15T08:00:00Z').getTime(),
+    endsAt: new Date('2026-08-17T23:59:00Z').getTime(),
     participantCount: 65,
+    createdAt: Date.now(),
   },
 ];
 
@@ -58,8 +58,9 @@ export function DiscoverPage() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const data = await apiFetch<NodoEvent[]>('/v1/events');
-        setEvents(data);
+        // Envuelta, como el resto de listados del API: {teams}, {ideas}, {skills}.
+        const data = await apiFetch<{ events: NodoEvent[] }>('/v1/events');
+        setEvents(data.events);
       } catch {
         setEvents(MOCK_EVENTS);
       } finally {
@@ -71,7 +72,7 @@ export function DiscoverPage() {
 
   const filtered = events.filter((e) => {
     const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' || e.type === typeFilter;
+    const matchesType = typeFilter === 'all' || e.kind === typeFilter;
     return matchesSearch && matchesType;
   });
 

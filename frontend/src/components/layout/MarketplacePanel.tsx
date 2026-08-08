@@ -29,7 +29,7 @@ export function MarketplacePanel() {
   const events = useEventStore((s) => s.events);
   const currentEvent = events.find((e) => e.id === currentEventId);
 
-  const mode = currentEvent ? getExperienceMode(currentEvent.type) : 'competition';
+  const mode = currentEvent ? getExperienceMode(currentEvent.kind) : 'competition';
   const tabs = mode === 'competition' ? COMPETITION_TABS : COLLABORATION_TABS;
   const defaultTab = mode === 'competition' ? 'people' : 'contributors';
 

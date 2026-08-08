@@ -15,7 +15,7 @@ export function ApplyButton({ teamId, teamName }: ApplyButtonProps) {
   const myApplication = useTeamStore((s) => s.myApplication);
   const setMyApplication = useTeamStore((s) => s.setMyApplication);
   const currentEvent = useEventStore((s) => s.events.find((e) => e.id === s.currentEventId));
-  const mode = currentEvent ? getExperienceMode(currentEvent.type) : 'competition';
+  const mode = currentEvent ? getExperienceMode(currentEvent.kind) : 'competition';
 
   const [modalOpen, setModalOpen] = useState(false);
   const [message, setMessage] = useState('');

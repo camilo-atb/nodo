@@ -20,7 +20,7 @@ interface NeedEntry {
 export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
   const setMyTeamId = useTeamStore((s) => s.setMyTeamId);
   const currentEvent = useEventStore((s) => s.events.find((e) => e.id === s.currentEventId));
-  const mode = currentEvent ? getExperienceMode(currentEvent.type) : 'competition';
+  const mode = currentEvent ? getExperienceMode(currentEvent.kind) : 'competition';
 
   const entityLabel = mode === 'collaboration' ? 'Project' : 'Team';
 
