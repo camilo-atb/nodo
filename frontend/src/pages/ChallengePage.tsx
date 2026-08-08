@@ -8,6 +8,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useChallengeStore } from '@/stores/challengeStore';
+import { useSessionStore } from '@/stores/sessionStore';
 import { useChallengeChannel } from '@/hooks/useChallengeChannel';
 import { apiFetch } from '@/lib/api';
 import { Spinner } from '@/components/base/Spinner';
@@ -129,13 +130,12 @@ export function ChallengePage() {
   // ─── Mock mode ───────────────────────────────────────────────────────────────
 
   const startMockChallenge = useCallback(() => {
-    const challengeStore = useChallengeStore.getState();
-    const personId = 'per_current-user'; // mock current user
+    const personId = useSessionStore.getState().personId ?? 'per_current-user';
     const timers: ReturnType<typeof setTimeout>[] = [];
 
-    let cumulativeDelay = 0;
-    const questionDuration = 5_000; // 5s per question in mock
-    const leaderboardDelay = 1_500; // 1.5s after question ends
+    let cumulativeDelay = 500; // small initial delay
+    const questionDuration = 8_000; // 8s per question — enough time to read and answer
+    const reviewPause = 2_000; // 2s to show leaderboard between questions
 
     MOCK_QUESTIONS.forEach((q, idx) => {
       // Reveal question
@@ -145,15 +145,15 @@ export function ChallengePage() {
         }, cumulativeDelay),
       );
 
-      // Leaderboard update after question timer expires
-      cumulativeDelay += questionDuration + leaderboardDelay;
+      // After question timer expires, show leaderboard
+      cumulativeDelay += questionDuration + 500; // 500ms grace after timer
       timers.push(
         setTimeout(() => {
           const mockRankings = [
             { personId, displayName: 'You', score: Math.min(idx + 1, 5), position: 1 },
             ...MOCK_PARTICIPANTS.map((p, pIdx) => ({
               ...p,
-              score: Math.floor(Math.random() * (idx + 1)),
+              score: Math.max(0, Math.floor(Math.random() * (idx + 2)) - 1),
               position: pIdx + 2,
             })),
           ]
@@ -164,7 +164,7 @@ export function ChallengePage() {
         }, cumulativeDelay),
       );
 
-      cumulativeDelay += 2_000; // pause between questions
+      cumulativeDelay += reviewPause; // pause showing leaderboard before next question
     });
 
     // End challenge
@@ -183,7 +183,7 @@ export function ChallengePage() {
     mockTimersRef.current = timers;
 
     // Also set a fake challengeId if not already set
-    if (!challengeStore.challengeId) {
+    if (!useChallengeStore.getState().challengeId) {
       useChallengeStore.getState().setChallenge(
         paramId ?? 'mock-challenge',
         'Hexagonal Architecture Challenge',

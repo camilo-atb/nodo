@@ -6,42 +6,58 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChallengeStore } from '@/stores/challengeStore';
 
-const TOTAL_DURATION_MS = 30_000; // 30s per question
-
 export function TimerBar() {
   const endsAt = useChallengeStore((s) => s.endsAt);
-  const [remaining, setRemaining] = useState(TOTAL_DURATION_MS);
-  const rafRef = useRef<number>(0);
+  const [remaining, setRemaining] = useState(0);
+  const [totalDuration, setTotalDuration] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (!endsAt) {
       setRemaining(0);
+      setTotalDuration(0);
       return;
     }
 
-    function tick() {
-      const now = Date.now();
-      const left = Math.max(0, endsAt! - now);
-      setRemaining(left);
-      if (left > 0) {
-        rafRef.current = requestAnimationFrame(tick);
-      }
-    }
+    // Calculate total duration when question appears
+    const now = Date.now();
+    const duration = Math.max(0, endsAt - now);
+    setTotalDuration(duration);
+    setRemaining(duration);
 
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
+    // Update every 50ms for smooth animation
+    intervalRef.current = setInterval(() => {
+      const left = Math.max(0, endsAt - Date.now());
+      setRemaining(left);
+      if (left <= 0 && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }, 50);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [endsAt]);
 
   const seconds = Math.ceil(remaining / 1000);
-  const fraction = remaining / TOTAL_DURATION_MS;
+  const fraction = totalDuration > 0 ? remaining / totalDuration : 0;
 
-  // Color transition: accent (>60%) → amber (30-60%) → red (<30%)
+  // Color transition: accent (>50%) → amber (20-50%) → red (<20%)
   let barColor = 'bg-accent';
   let textColor = 'text-accent';
-  if (fraction < 0.3) {
+  if (fraction < 0.2) {
     barColor = 'bg-red';
     textColor = 'text-red';
-  } else if (fraction < 0.6) {
+  } else if (fraction < 0.5) {
     barColor = 'bg-amber';
     textColor = 'text-amber';
   }
@@ -51,7 +67,7 @@ export function TimerBar() {
   if (remaining === 0) {
     return (
       <div className="w-full text-center">
-        <p className="text-red font-bold text-lg animate-pulse">Time&apos;s up!</p>
+        <p className="text-muted font-medium text-sm">Waiting for results...</p>
       </div>
     );
   }
@@ -64,8 +80,8 @@ export function TimerBar() {
       </div>
       <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-100 ${barColor}`}
-          style={{ width: `${fraction * 100}%` }}
+          className={`h-full rounded-full ${barColor}`}
+          style={{ width: `${fraction * 100}%`, transition: 'width 50ms linear' }}
         />
       </div>
     </div>
