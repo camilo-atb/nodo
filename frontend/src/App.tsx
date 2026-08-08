@@ -6,6 +6,7 @@ import { DiscoverPage } from '@/pages/DiscoverPage';
 import { EventPage } from '@/pages/EventPage';
 import { TeamPage } from '@/pages/TeamPage';
 import { ChallengePage } from '@/pages/ChallengePage';
+import { BoardPage } from '@/pages/BoardPage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { RequireSession } from '@/routes/guards/RequireSession';
 
@@ -25,6 +26,7 @@ export function App() {
           <Route element={<RequireSession />}>
             <Route path="/event/:eventId/*" element={<EventPage />} />
             <Route path="/event/:eventId/team/:teamId" element={<TeamPage />} />
+            <Route path="/event/:eventId/team/:teamId/board" element={<BoardPage />} />
             <Route path="/event/:eventId/challenge/:challengeId" element={<ChallengePage />} />
           </Route>
         </Routes>
