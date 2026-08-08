@@ -213,10 +213,14 @@
 
 ---
 
-### T-021: Routing con React Router
+### T-021: Routing con React Router + `RequireSession` guard
 
-**Docs:** 04-screens-and-components (mapa de pantallas)  
-**Entregable:** rutas configuradas (`/onboarding`, `/app`, `/app/profile/:id`, `/app/team/:id`, etc.), guards de sesión.
+**Docs:** 04-screens-and-components (mapa de pantallas), 00-react-for-angular-devs (Guards)  
+**Entregable:**
+- Rutas configuradas (`/onboarding`, `/app`, `/app/profile/:id`, `/app/team/:id`, etc.).
+- `src/routes/guards/RequireSession.tsx`: componente wrapper que verifica `sessionStore.sessionToken`. Si no hay sesión → `<Navigate to="/onboarding" />`. Si hay sesión → `<Outlet />`.
+- Todas las rutas bajo `/app/*` envueltas en `<RequireSession />`.
+- Ruta raíz `/` redirige a `/app` (o `/onboarding` si no hay sesión, manejado por el guard).
 
 ---
 
@@ -226,6 +230,20 @@
 
 **Docs:** 04-screens-and-components (filtrado consistente), 01-decisions (ADR-F-004), 07-architecture  
 **Entregable:** hook que transforma el `Map` del store al formato `{ nodes: [...], links: [...] }` de react-force-graph. **Filtra nodos y aristas atómicamente** (al excluir un tipo de nodo, excluye también aristas cuyos extremos apunten a nodos excluidos).
+
+---
+
+### T-022b: Extraer mapeo kind → estilo visual a `utils/graphStyles.ts`
+
+**Docs:** 07-architecture (carpeta `utils/`), 00-react-for-angular-devs (Pipes → funciones puras)  
+**Entregable:**
+- `src/utils/graphStyles.ts` exporta funciones puras:
+  - `getNodeColor(kind: NodeKind): string` — devuelve el color del nodo según su kind.
+  - `getNodeShape(kind: NodeKind): 'circle' | 'square' | 'diamond' | 'star'` — forma geométrica.
+  - `getNodeSize(kind: NodeKind): number` — radio base.
+  - `getLinkStyle(edge: GraphEdge): { color: string; dashed: boolean; width: number }` — estilo de arista (punteada si `transient: true`).
+- `nodeRenderer.ts` y `linkRenderer.ts` importan estas funciones en vez de tener el mapeo inline.
+- Cualquier otro componente que necesite el color de un kind (badges, leyendas) importa de `graphStyles.ts` — single source of truth.
 
 ---
 

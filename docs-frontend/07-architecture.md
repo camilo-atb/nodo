@@ -37,24 +37,32 @@ src/
 ├── main.tsx                    # entry point
 ├── App.tsx                     # PortalProvider + Router + Layout
 │
-├── lib/                        # utilidades y configuración
-│   ├── api.ts                  # cliente HTTP tipado (wrapper de fetch)
+├── lib/                        # utilidades y configuración (services sin estado)
+│   ├── api.ts                  # cliente HTTP tipado (wrapper de fetch = HttpInterceptor)
 │   ├── portal.ts               # configuración del SDK de Portal
 │   └── constants.ts            # env vars, magic numbers
 │
-├── stores/                     # estado global (Zustand)
+├── stores/                     # estado global (Zustand = services con estado)
 │   ├── graphStore.ts           # nodos, aristas, seq, applyPatch, loadSnapshot
 │   ├── feedStore.ts            # líneas del feed de actividad
 │   ├── presenceStore.ts        # quién está online
 │   ├── sessionStore.ts         # personId, sessionToken, perfil
 │   └── teamStore.ts            # applications del equipo del usuario
 │
-├── hooks/                      # custom hooks
+├── hooks/                      # custom hooks (= directives + lógica reutilizable)
 │   ├── usePortalChannel.ts     # suscripción a network-main: verifica seq, aplica patch, alimenta feed
 │   ├── useTeamChannel.ts       # suscripción a team-{teamId}
 │   ├── useGraphSelectors.ts    # selectores memoizados del grafo
 │   ├── useApi.ts               # helpers para llamadas REST con error handling
 │   └── useGraphData.ts         # transforma store → { nodes, links } para react-force-graph
+│
+├── utils/                      # funciones puras compartidas (= pipes)
+│   ├── formatRelativeTime.ts   # "hace 3 min", "2h ago"
+│   └── graphStyles.ts          # mapeo kind → color, forma, tamaño (usado por nodeRenderer y linkRenderer)
+│
+├── routes/                     # configuración de routing
+│   └── guards/                 # componentes wrapper de protección de ruta (= CanActivate)
+│       └── RequireSession.tsx  # redirige a /onboarding si no hay sesión
 │
 ├── components/                 # componentes de UI
 │   ├── base/                   # componentes reutilizables
@@ -129,11 +137,16 @@ flowchart TD
     Pages --> Components
     Pages --> Hooks
     Pages --> Stores
+    Pages --> Utils
     Components --> Hooks
     Components --> Stores
+    Components --> Utils
     Hooks --> Stores
     Hooks --> Lib
-    Stores --> Contracts["@nodo/contracts"]
+    Hooks --> Utils
+    Guards["routes/guards/"] --> Stores
+    Utils --> Contracts["@nodo/contracts"]
+    Stores --> Contracts
     Lib --> Contracts
 ```
 
@@ -141,6 +154,8 @@ flowchart TD
 |---|---|
 | `stores/` no importa `components/` ni `pages/` | El estado no conoce la UI |
 | `lib/` no importa nada del proyecto | Solo usa `@nodo/contracts` y env vars |
+| `utils/` no importa stores ni componentes | Funciones puras: reciben datos, devuelven datos |
+| `routes/guards/` solo importa stores | Un guard lee estado y decide (redirige o renderiza `<Outlet />`) |
 | `components/base/` no importa stores | Recibe datos por props, es reutilizable |
 | Los tipos de dominio vienen de `@nodo/contracts` | Nunca se redefinen localmente |
 | `types/ui.ts` solo contiene tipos de presentación | Ej. opciones de filtro, estados de formulario |
