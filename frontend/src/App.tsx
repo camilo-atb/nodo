@@ -4,6 +4,7 @@ import { portal, fetchPortalToken } from '@/lib/portal';
 import { useSessionStore } from '@/stores/sessionStore';
 import { DiscoverPage } from '@/pages/DiscoverPage';
 import { EventPage } from '@/pages/EventPage';
+import { OnboardingPage } from '@/pages/OnboardingPage';
 import { RequireSession } from '@/routes/guards/RequireSession';
 
 export function App() {
@@ -18,7 +19,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/discover" replace />} />
           <Route path="/discover" element={<DiscoverPage />} />
-          <Route path="/onboarding" element={<div className="min-h-screen bg-bg flex items-center justify-center text-muted">Onboarding TODO</div>} />
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<RequireSession />}>
             <Route path="/event/:eventId/*" element={<EventPage />} />
           </Route>
