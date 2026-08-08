@@ -8,7 +8,7 @@ import type { MatchmakerService } from '../agent/matchmaker.js';
 import type { MatchmakerDebugLog } from '../agent/debug-log.js';
 import type { Scheduler } from '../agent/scheduler.js';
 import type { EventPublisher } from '../portal/event-publisher.js';
-import type { PortalTokenIssuer } from '../portal/jwt.js';
+import type { TokenIssuer } from '../portal/jwt.js';
 
 /**
  * Todo lo que las rutas necesitan, ensamblado una vez al arrancar. Las rutas
@@ -22,7 +22,7 @@ export type AppContext = {
   scheduler: Scheduler;
   matchmaker: MatchmakerService;
   publisher: EventPublisher;
-  jwtIssuer: PortalTokenIssuer;
+  jwtIssuer: TokenIssuer;
   jwks: { keys: JWK[] };
   debugLog: MatchmakerDebugLog;
   env: Env;

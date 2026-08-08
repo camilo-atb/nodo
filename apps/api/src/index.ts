@@ -14,7 +14,7 @@ import { PQueueScheduler } from './agent/scheduler.js';
 import { DrizzleSuggestionRepository } from './agent/suggestion-repository.js';
 import { EventPublisher, DrizzleWatermarkStore, DrizzleOutboxStore } from './portal/event-publisher.js';
 import { HttpPortalPublisher } from './portal/http-publisher.js';
-import { buildJwks, PortalTokenIssuer } from './portal/jwt.js';
+import { buildJwks, PortalMintedIssuer } from './portal/jwt.js';
 
 /**
  * Red de seguridad de último recurso. El backend no sostiene conexiones
@@ -47,7 +47,9 @@ const main = async (): Promise<void> => {
     new DrizzleOutboxStore(db),
   );
 
-  const jwtIssuer = await PortalTokenIssuer.create(env.JWT_PRIVATE_KEY, env.JWT_ISSUER, env.JWT_KID);
+  // ADR-016: lo acuña Portal. Firmarlo aquí (ADR-006) obligaba a que Portal
+  // descargara nuestro JWKS por internet, que es imposible desde localhost.
+  const jwtIssuer = new PortalMintedIssuer(env.PORTAL_API_URL, env.PORTAL_SECRET);
   const jwks = await buildJwks(env.JWT_PRIVATE_KEY, env.JWT_KID);
 
   const rawLlm = new GroqLlmProvider(

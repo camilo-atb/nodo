@@ -207,18 +207,9 @@ export default defineConfig({
     url: 'https://api.nodo.app/v1/portal/webhooks',
   },
 
-  // El JWT lo emite nuestro backend (RS256). Portal lo verifica contra
-  // nuestro JWKS. claimMap mapea por ruta con puntos, no con funciones.
-  auth: {
-    issuer:  'https://api.nodo.app',
-    jwksUrl: 'https://api.nodo.app/.well-known/jwks.json',
-    claimMap: {
-      userId:   'sub',      // único obligatorio
-      username: 'name',
-      handle:   'handle',
-      teams:    'teams',    // { [teamId]: 'member' | 'applicant' }
-    },
-  },
+  // Sin bloque `auth`: los tokens los acuña Portal (ADR-016). Declararlo
+  // significa "verifico los que yo emito", y eso exige que Portal alcance
+  // nuestro JWKS por internet — imposible con el backend en localhost.
 
   channels: {
     'network-main': {

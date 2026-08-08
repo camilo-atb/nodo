@@ -10,7 +10,7 @@ Todo lo que se usa, en un solo lugar. Si algo no está en esta tabla, no entra a
 | Runtime | **Node 22** + pnpm | idéntico en local y en Railway | 003 |
 | Framework HTTP | **Hono** | | 003 |
 | Validación | **Zod** | entrada, salida y respuestas del LLM | |
-| Firma de JWT | **`jose`** (npm) | firma RS256 y publicación del JWKS | [006](#adr-006--identidad-sin-contraseñas) |
+| JWT de Portal | **lo acuña Portal** | `POST /v1/tokens` con la `sk_` | [016](#adr-016--el-jwt-de-portal-lo-acuña-portal) |
 | Base de datos | **PostgreSQL 16** (Supabase) | grafo en `nodes` / `edges` | [001](#adr-001--postgresql-con-el-grafo-modelado-en-nodes--edges) |
 | Migraciones y tipos | **Drizzle** | consultas del grafo en SQL crudo | 001 |
 | Tiempo real | **Portal** | `@portalsdk/cli`, `@portalsdk/config` | [005](#adr-005--postgres-es-la-fuente-de-verdad-portal-es-transporte) |
@@ -27,13 +27,12 @@ Cuatro secretos. Ninguno se commitea; todos van en `.env` y en las variables de 
 
 | Variable | Quién la usa | Nunca sale de |
 |---|---|---|
-| `PORTAL_SECRET` (`sk_`) | backend, para publicar | servidor |
+| `PORTAL_SECRET` (`sk_`) | backend, para publicar **y para pedir el JWT de usuario** | servidor |
 | `PORTAL_WEBHOOK_SECRET` | backend, para verificar HMAC | servidor |
-| `JWT_PRIVATE_KEY` | backend, para firmar el JWT de Portal | servidor |
 | `LLM_API_KEY` | backend, para el agente | servidor |
 | `DATABASE_URL` | backend | servidor |
 
-Dos cosas son públicas por diseño y no son secretos: la clave publicable de Portal (`pk_`), que consume el frontend, y el JWKS en `/.well-known/jwks.json`, que contiene solo la clave pública de firma.
+`JWT_PRIVATE_KEY` **ya no se usa**: desde [ADR-016](#adr-016--el-jwt-de-portal-lo-acuña-portal) el token lo firma Portal. La clave publicable (`pk_`) es pública por diseño y la consume el frontend.
 
 ---
 
@@ -422,3 +421,25 @@ type TeamEnvelope<T extends string, P> = Envelope<T, P> & { graph?: never };
 - El `authz` de `team-*` admite solicitantes, así que **un solicitante ve el tablero del equipo**. Se acepta a cambio de no duplicar la autorización.
 - Un cambio obligatorio en el frontend: el canal del reto pasa de `challenge-{challengeId}` a `challenge-{teamId}-{challengeId}`, porque `authz` corre sin base de datos y no puede traducir un id de reto a un equipo. Es una línea.
 - `Event` queda en el glosario como término impreciso aceptado a conciencia, para que nadie lo «arregle» dentro de seis meses.
+
+---
+
+## ADR-016 — El JWT de Portal lo acuña Portal
+
+**Estado:** cerrada · **supersede el mecanismo de [ADR-006](#adr-006--identidad-sin-contraseñas)** (la decisión de identidad sin contraseñas sigue vigente; lo que cambia es quién firma el token)
+
+**Decisión.** `POST /v1/portal/token` deja de firmar en local con RS256 y pasa a pedirle el token a Portal: `POST https://api.useportal.co/v1/tokens` con la `sk_`, enviando `{ userId, username, claims: { handle, teams } }`. El bloque `auth` desaparece de `portal.config.ts`.
+
+**Por qué.**
+- El typing de `@portalsdk/config` describe `AuthConfig` como *«verify tokens you issue yourself, **rather than** tokens minted by Portal»*. Firmar uno mismo es **una opción, no un requisito**, y ADR-006 tomó la más costosa sin que constara la alternativa.
+- Para verificar un token propio, Portal tiene que **descargar el JWKS por internet**. Con el backend en `localhost` eso es imposible, así que el tiempo real **no podía funcionar en desarrollo** — ni arreglando el `issuer` ni ejecutando `portal deploy`. No era una tarea pendiente: era un callejón sin salida.
+- Verificado contra la API real: `POST /v1/tokens` devuelve un JWT `HS256` firmado con la clave del entorno, y **los claims propios viajan bajo la clave `claims`**, así que `authz` sigue leyendo `ctx.claims.teams` sin cambios.
+
+**Consecuencias.**
+- **`JWT_PRIVATE_KEY` deja de ser necesaria.** Los cinco secretos del proyecto pasan a cuatro.
+- `GET /.well-known/jwks.json` queda sin consumidor. El código se conserva —es el camino de ADR-006, válido si algún día se vuelve a él— pero nadie lo consulta.
+- El token pasa de 15 min a **1 hora**, que es lo que decide Portal. El claim `teams` sigue calculándose al emitir, así que la advertencia de ADR-006 sobre refrescar tras aceptar una solicitud sigue en pie, con una ventana mayor.
+- La firma es `HS256` con una clave que solo conoce Portal. Nosotros ya no custodiamos material criptográfico para esto.
+- **El tiempo real funciona en `localhost`**, que era el objetivo.
+
+**Lo que NO cambia.** ADR-006 sigue vigente en todo lo demás: identidad sin contraseñas, `sessionToken` opaco en `localStorage`, código de recuperación, y que la identidad es suplantable como deuda declarada.
