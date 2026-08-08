@@ -8,8 +8,8 @@ import { Spinner } from '@/components/base/Spinner';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Header } from '@/components/layout/Header';
 
-const typeColors: Record<EventType, 'violet' | 'green'> = {
-  hackathon: 'violet',
+const typeColors: Record<EventType, 'accent' | 'green'> = {
+  hackathon: 'accent',
   project: 'green',
 };
 

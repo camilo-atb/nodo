@@ -19,7 +19,7 @@ export function TeamsList() {
         </span>
         <button
           onClick={() => setShowAll(!showAll)}
-          className="text-[11px] text-violet hover:text-violet-2 transition-colors"
+          className="text-[11px] text-accent hover:text-accent-2 transition-colors"
         >
           {showAll ? 'Show recruiting' : 'Show all'}
         </button>

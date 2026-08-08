@@ -35,7 +35,7 @@ export function RecoveryCodeDisplay({ code, onContinue }: RecoveryCodeDisplayPro
           type="checkbox"
           checked={saved}
           onChange={(e) => setSaved(e.target.checked)}
-          className="w-4 h-4 rounded border-border bg-panel-2 text-violet focus:ring-violet focus:ring-offset-0 accent-violet"
+          className="w-4 h-4 rounded border-border bg-panel-2 text-accent focus:ring-accent focus:ring-offset-0 accent-accent"
         />
         <span className="text-sm text-muted group-hover:text-white transition-colors">
           I've saved my recovery code

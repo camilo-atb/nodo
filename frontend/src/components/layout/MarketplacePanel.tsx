@@ -24,7 +24,7 @@ export function MarketplacePanel() {
             onClick={() => setTab(t.value)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               tab === t.value
-                ? 'bg-violet/15 text-violet'
+                ? 'bg-accent/15 text-accent'
                 : 'text-muted hover:text-white'
             }`}
           >

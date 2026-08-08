@@ -109,12 +109,12 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
             onChange={(e) => setFreeText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleFreeTextAdd(); } }}
             placeholder="e.g. react, typescript..."
-            className="flex-1 rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-violet"
+            className="flex-1 rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
           />
           <button
             type="button"
             onClick={handleFreeTextAdd}
-            className="px-3 py-2 text-sm rounded-lg bg-violet/20 text-violet hover:bg-violet/30 transition-colors"
+            className="px-3 py-2 text-sm rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
           >
             Add
           </button>
@@ -124,13 +124,13 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
             {value.map((slug) => (
               <span
                 key={slug}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-violet/10 text-violet border border-violet/20"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-accent/10 text-accent border border-accent/20"
               >
                 {slug}
                 <button
                   type="button"
                   onClick={() => removeSkill(slug)}
-                  className="ml-1 text-violet/60 hover:text-violet"
+                  className="ml-1 text-accent/60 hover:text-accent"
                   aria-label={`Remove ${slug}`}
                 >
                   ×
@@ -151,7 +151,7 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search skills..."
-        className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-violet"
+        className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
       />
 
       {open && filtered.length > 0 && (
@@ -181,13 +181,13 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
           {value.map((slug) => (
             <span
               key={slug}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-violet/10 text-violet border border-violet/20"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-accent/10 text-accent border border-accent/20"
             >
               {getLabel(slug)}
               <button
                 type="button"
                 onClick={() => removeSkill(slug)}
-                className="ml-1 text-violet/60 hover:text-violet"
+                className="ml-1 text-accent/60 hover:text-accent"
                 aria-label={`Remove ${getLabel(slug)}`}
               >
                 ×

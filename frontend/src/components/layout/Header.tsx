@@ -21,7 +21,7 @@ export function Header() {
     <header className="sticky top-0 z-50 flex items-center justify-between h-14 px-4 border-b border-border bg-bg/80 backdrop-blur-md">
       {/* Left: Logo */}
       <div className="flex items-center gap-2">
-        <svg className="w-6 h-6 text-violet" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="3" />
           <circle cx="5" cy="6" r="2" />
           <circle cx="19" cy="6" r="2" />
@@ -43,7 +43,7 @@ export function Header() {
             onClick={() => setActiveTab(tab.value)}
             className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
               activeTab === tab.value
-                ? 'bg-violet/15 text-violet'
+                ? 'bg-accent/15 text-accent'
                 : 'text-muted hover:text-white'
             }`}
           >

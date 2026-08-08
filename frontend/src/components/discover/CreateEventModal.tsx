@@ -48,7 +48,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
   }
 
   const inputClasses =
-    'w-full bg-panel-2 border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:border-violet/50';
+    'w-full bg-panel-2 border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:border-accent/50';
 
   return (
     <Modal open={open} onClose={onClose} title="Create Opportunity">

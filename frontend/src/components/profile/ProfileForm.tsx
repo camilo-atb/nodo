@@ -126,7 +126,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           onChange={(e) => setDisplayName(e.target.value)}
           placeholder="Your name"
           required
-          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-violet transition-shadow"
+          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent transition-shadow"
         />
       </div>
 
@@ -143,7 +143,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           placeholder="your-handle"
           required
           className={`w-full rounded-lg bg-panel-2 border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 transition-shadow ${
-            handleError ? 'border-red focus:ring-red' : 'border-border focus:ring-violet'
+            handleError ? 'border-red focus:ring-red' : 'border-border focus:ring-accent'
           }`}
         />
         {handleError ? (
@@ -162,7 +162,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           value={headline}
           onChange={(e) => setHeadline(e.target.value)}
           placeholder="Backend Engineer"
-          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-violet transition-shadow"
+          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent transition-shadow"
         />
       </div>
 
@@ -175,13 +175,13 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           onChange={(e) => setBioRaw(e.target.value)}
           placeholder="Tell us about your experience..."
           rows={4}
-          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-violet transition-shadow resize-none"
+          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent transition-shadow resize-none"
         />
         <button
           type="button"
           onClick={handleExtractSkills}
           disabled={extracting || !bioRaw.trim()}
-          className="inline-flex items-center gap-2 text-xs text-violet hover:text-violet-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center gap-2 text-xs text-accent hover:text-accent-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {extracting && <Spinner size="sm" />}
           {extracting ? 'Analyzing...' : '✨ Analyze Bio for Skills'}
@@ -201,7 +201,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           id="availability"
           value={availability}
           onChange={(e) => setAvailability(e.target.value as Availability)}
-          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet transition-shadow"
+          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent transition-shadow"
         >
           <option value="full">Full-time</option>
           <option value="partial">Partial</option>
@@ -216,7 +216,7 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           id="language"
           value={language}
           onChange={(e) => setLanguage(e.target.value as 'es' | 'en')}
-          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-violet transition-shadow"
+          className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent transition-shadow"
         >
           <option value="es">Español</option>
           <option value="en">English</option>

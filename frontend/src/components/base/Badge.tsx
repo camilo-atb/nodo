@@ -1,6 +1,6 @@
 interface BadgeProps {
   children: React.ReactNode;
-  color?: 'green' | 'amber' | 'red' | 'violet' | 'cyan' | 'muted';
+  color?: 'green' | 'amber' | 'red' | 'accent' | 'cyan' | 'muted';
   className?: string;
 }
 
@@ -9,7 +9,7 @@ export function Badge({ children, color = 'muted', className = '' }: BadgeProps)
     green: 'text-green bg-green/10 border-green/20',
     amber: 'text-amber bg-amber/10 border-amber/20',
     red: 'text-red bg-red/10 border-red/20',
-    violet: 'text-violet bg-violet/10 border-violet/20',
+    accent: 'text-accent bg-accent/10 border-accent/20',
     cyan: 'text-cyan bg-cyan/10 border-cyan/20',
     muted: 'text-muted bg-white/5 border-border',
   };

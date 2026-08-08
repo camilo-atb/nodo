@@ -7,8 +7,8 @@ interface EventCardProps {
   event: NodoEvent;
 }
 
-const typeColors: Record<EventType, 'violet' | 'green'> = {
-  hackathon: 'violet',
+const typeColors: Record<EventType, 'accent' | 'green'> = {
+  hackathon: 'accent',
   project: 'green',
 };
 

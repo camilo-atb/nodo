@@ -12,7 +12,7 @@ export function MainLayout() {
       <main className="flex items-center justify-center text-muted">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-panel-2 border border-border flex items-center justify-center">
-            <svg className="w-8 h-8 text-violet/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg className="w-8 h-8 text-accent/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="12" cy="12" r="3" />
               <circle cx="5" cy="6" r="2" />
               <circle cx="19" cy="6" r="2" />

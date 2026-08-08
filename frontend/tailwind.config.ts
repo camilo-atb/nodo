@@ -16,6 +16,10 @@ export default {
           DEFAULT: '#9299ad',
           2: '#656c7e',
         },
+        accent: {
+          DEFAULT: '#06b6d4',
+          2: '#0891b2',
+        },
         violet: {
           DEFAULT: '#8b5cf6',
           2: '#6d5dfc',

@@ -26,7 +26,7 @@ export function OnboardingPage() {
         {step === 'welcome' && (
           <div className="text-center space-y-8 animate-in fade-in">
             <div className="space-y-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-violet/10 border border-violet/20 mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10 border border-accent/20 mb-4">
                 <span className="text-3xl">🚀</span>
               </div>
               <h1 className="text-4xl font-bold text-white tracking-tight">
