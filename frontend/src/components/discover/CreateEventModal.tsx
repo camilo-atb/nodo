@@ -49,7 +49,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
   }
 
   const inputClasses =
-    'w-full bg-panel-2 border border-border rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:border-accent/50';
+    'w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-colors bg-white border-gray-200 text-[#111318] placeholder:text-gray-400 focus:border-[#12c7e5] focus:ring-4 focus:ring-[#12c7e5]/10 dark:bg-[#101317] dark:border-[#20262d] dark:text-[#f4f6f8] dark:placeholder:text-[#68717d]';
 
   return (
     <Modal open={open} onClose={onClose} title="Create Opportunity">
@@ -85,7 +85,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] text-muted-2 mb-1 block">Start</label>
+            <label className="text-[11px] text-gray-500 dark:text-[#9da6b1] mb-1 block">Start</label>
             <input
               type="datetime-local"
               value={startDate}
@@ -95,7 +95,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
             />
           </div>
           <div>
-            <label className="text-[11px] text-muted-2 mb-1 block">End</label>
+            <label className="text-[11px] text-gray-500 dark:text-[#9da6b1] mb-1 block">End</label>
             <input
               type="datetime-local"
               value={endDate}

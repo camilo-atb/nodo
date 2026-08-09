@@ -338,15 +338,17 @@ function HackathonCard({ event }: { event: NodoEvent }) {
         bg-white border-gray-200 shadow-sm hover:-translate-y-1 hover:shadow-xl
         dark:bg-[#101317] dark:border-[#20262d] dark:hover:border-[#252b32]"
     >
-      {/* Top: badge + match */}
+      {/* Top: badge */}
       <div className="flex items-center justify-between mb-4">
         <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#12c7e5]/10 text-[9px] font-extrabold tracking-[0.8px] text-[#12c7e5] uppercase">
           ✦ HACKATHON
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
-          <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
-          94% match
-        </span>
+        {event.participantCount > 0 && (
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
+            <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
+            {event.participantCount} joined
+          </span>
+        )}
       </div>
 
       {/* Date block + title area */}
@@ -401,19 +403,29 @@ function HackathonCard({ event }: { event: NodoEvent }) {
 
       {/* Footer */}
       <div className="mt-auto pt-4 border-t border-gray-100 dark:border-[#20262d] flex items-center justify-between">
-        {/* Avatar group */}
+        {/* Participant info */}
         <div className="flex items-center">
-          <div className="flex -space-x-1">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
-              />
-            ))}
-          </div>
-          <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
-            +{Math.max(event.participantCount - 3, 0)} joined
-          </span>
+          {event.participantCount > 0 ? (
+            <>
+              <div className="flex -space-x-1">
+                {Array.from({ length: Math.min(event.participantCount, 3) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
+                  />
+                ))}
+              </div>
+              {event.participantCount > 3 && (
+                <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
+                  +{event.participantCount - 3} joined
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-[11px] text-gray-400 dark:text-[#68717d]">
+              Be the first to join
+            </span>
+          )}
         </div>
 
         {/* Arrow button */}
@@ -441,15 +453,17 @@ function ProjectCard({ event }: { event: NodoEvent }) {
         bg-white border-gray-200 shadow-sm hover:-translate-y-1 hover:shadow-xl
         dark:bg-[#101317] dark:border-[#20262d] dark:hover:border-[#252b32]"
     >
-      {/* Top: badge + match */}
+      {/* Top: badge */}
       <div className="flex items-center justify-between mb-4">
         <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#21d69a]/10 text-[9px] font-extrabold tracking-[0.8px] text-[#21d69a] uppercase">
           ◉ PROJECT
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
-          <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
-          88% match
-        </span>
+        {event.participantCount > 0 && (
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
+            <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
+            {event.participantCount} contributors
+          </span>
+        )}
       </div>
 
       {/* Project identifier */}
@@ -469,13 +483,11 @@ function ProjectCard({ event }: { event: NodoEvent }) {
         {event.description}
       </p>
 
-      {/* Stats */}
+      {/* Metadata */}
       <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-[#68717d]">
-        <span className="flex items-center gap-1">★ 248</span>
-        <span className="flex items-center gap-1">⑂ 42</span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#3178c6]" />
-          TypeScript
+          <PersonIcon />
+          {event.participantCount} contributors
         </span>
       </div>
 
@@ -497,19 +509,29 @@ function ProjectCard({ event }: { event: NodoEvent }) {
 
       {/* Footer */}
       <div className="mt-auto pt-4 border-t border-gray-100 dark:border-[#20262d] flex items-center justify-between">
-        {/* Avatar group */}
+        {/* Contributor info */}
         <div className="flex items-center">
-          <div className="flex -space-x-1">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
-              />
-            ))}
-          </div>
-          <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
-            +{Math.max(event.participantCount - 3, 0)} contributors
-          </span>
+          {event.participantCount > 0 ? (
+            <>
+              <div className="flex -space-x-1">
+                {Array.from({ length: Math.min(event.participantCount, 3) }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
+                  />
+                ))}
+              </div>
+              {event.participantCount > 3 && (
+                <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
+                  +{event.participantCount - 3} contributors
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-[11px] text-gray-400 dark:text-[#68717d]">
+              Looking for contributors
+            </span>
+          )}
         </div>
 
         {/* Arrow button */}
