@@ -23,10 +23,9 @@ export function LandingPage() {
           </div>
 
           <div className="nodo-nav-links">
-            <button onClick={() => scrollTo('hero')}>Discover</button>
+            <button onClick={() => scrollTo('hero')}>Home</button>
             <button onClick={() => scrollTo('problem')}>Why Nodo</button>
             <button onClick={() => scrollTo('how-it-works')}>How it works</button>
-            <button onClick={() => scrollTo('features')}>Features</button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -76,7 +75,7 @@ export function LandingPage() {
 
           {/* Description */}
           <p className="nodo-hero-description">
-            Nodo connects builders, designers, and thinkers through AI-powered matching.
+            Discover hackathons where builders, designers, and thinkers connect through AI-powered matching.
             Find your team, prove your skills, and ship together.
           </p>
 
@@ -86,7 +85,7 @@ export function LandingPage() {
               Get Started →
             </button>
             <button onClick={() => navigate('/discover')} className="nodo-btn-secondary">
-              Explore opportunities
+              Explore hackathons
             </button>
           </div>
         </div>
@@ -231,7 +230,7 @@ export function LandingPage() {
 
           <div className="nodo-steps-grid">
             {[
-              { step: '01', title: 'DISCOVER', desc: 'Find events, projects and teams looking for talent.', icon: '◎', tags: ['Search', 'Browse', 'Filter'] },
+              { step: '01', title: 'DISCOVER', desc: 'Find hackathons and teams looking for talent.', icon: '◎', tags: ['Search', 'Browse', 'Filter'] },
               { step: '02', title: 'MATCH', desc: 'AI analyzes your skills and suggests compatible teams.', icon: '⟡', tags: ['AI', 'Scoring', 'Realtime'] },
               { step: '03', title: 'VALIDATE', desc: 'Prove what you know with realtime skill challenges.', icon: '△', tags: ['Challenge', 'Proof', 'Trust'] },
               { step: '04', title: 'COLLABORATE', desc: 'Build together on a shared workspace with your team.', icon: '□', tags: ['Portal', 'Sync', 'Ship'] },
