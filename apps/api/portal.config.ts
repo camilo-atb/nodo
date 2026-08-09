@@ -18,7 +18,7 @@ import type { ApplicationDTO, SuggestionDTO } from '@nodo/contracts';
  */
 export default defineConfig({
   webhooks: {
-    url: 'https://api.nodo.app/v1/portal/webhooks',
+    url: 'https://nodo-ixvi.onrender.com/v1/portal/webhooks',
   },
 
   // Sin bloque `auth`: los tokens los acuña Portal (ADR-016). Declararlo
