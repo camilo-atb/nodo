@@ -6,7 +6,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ForceNode } from '@/hooks/useGraphData';
 import { useSessionStore } from '@/stores/sessionStore';
-import { useTeamStore } from '@/stores/teamStore';
 import { apiFetch, ApiError } from '@/lib/api';
 import type { ApplicationDTO } from '@nodo/contracts';
 
