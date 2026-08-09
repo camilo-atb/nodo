@@ -49,7 +49,10 @@ describe('portal.config.ts — team-*', () => {
       claims: { userId: 'per_laura', anon: false, teams: { tm_healthai: 'member' } },
       channel: channel('team-tm_healthai', 'team-*'),
     });
-    expect(result).toMatchObject({ action: 'allow', capabilities: { isMember: true } });
+    expect(result).toMatchObject({
+      action: 'allow',
+      capabilities: { isMember: true, publish: false, sendDirect: false },
+    });
   });
 
   it('admite a un solicitante con isMember false', () => {
@@ -57,7 +60,10 @@ describe('portal.config.ts — team-*', () => {
       claims: { userId: 'per_camilo', anon: false, teams: { tm_healthai: 'applicant' } },
       channel: channel('team-tm_healthai', 'team-*'),
     });
-    expect(result).toMatchObject({ action: 'allow', capabilities: { isMember: false } });
+    expect(result).toMatchObject({
+      action: 'allow',
+      capabilities: { isMember: false, publish: false },
+    });
   });
 
   const application = {

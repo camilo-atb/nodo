@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiErrorMessage, apiFetch, ApiError } from '@/lib/api';
+import { fetchPortalToken, portal } from '@/lib/portal';
 import { useTeamStore } from '@/stores/teamStore';
 import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 import { Button } from '@/components/base/Button';
@@ -9,9 +10,10 @@ import type { ApplicationDTO } from '@nodo/contracts';
 interface ApplyButtonProps {
   teamId: string;
   teamName: string;
+  eventId: string;
 }
 
-export function ApplyButton({ teamId, teamName }: ApplyButtonProps) {
+export function ApplyButton({ teamId, teamName, eventId }: ApplyButtonProps) {
   const myApplication = useTeamStore((s) => s.myApplication);
   const setMyApplication = useTeamStore((s) => s.setMyApplication);
   const currentEvent = useEventStore((s) => s.events.find((e) => e.id === s.currentEventId));
@@ -44,6 +46,10 @@ export function ApplyButton({ teamId, teamName }: ApplyButtonProps) {
     setSubmitting(true);
     setError(null);
     try {
+      // A shared/direct team URL may be opened before visiting the EventPage.
+      // Subscription is idempotent and is required by the applications API.
+      await apiFetch(`/v1/events/${eventId}/subscription`, { method: 'POST' });
+
       const res = await apiFetch<{ application: ApplicationDTO }>(
         `/v1/teams/${teamId}/applications`,
         {
@@ -52,9 +58,11 @@ export function ApplyButton({ teamId, teamName }: ApplyButtonProps) {
         },
       );
       setMyApplication(res.application);
+      // The fresh Portal token now includes this team with the applicant role.
+      portal.setToken(fetchPortalToken);
       setModalOpen(false);
       setMessage('');
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 409) {
         const body = err.body as { error?: string };
         if (body.error === 'DUPLICATE_APPLICATION') {
@@ -63,7 +71,7 @@ export function ApplyButton({ teamId, teamName }: ApplyButtonProps) {
           setError('Conflict — you may already have an application.');
         }
       } else {
-        setError('Something went wrong. Please try again.');
+        setError(apiErrorMessage(err, 'Something went wrong. Please try again.'));
       }
     } finally {
       setSubmitting(false);

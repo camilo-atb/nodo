@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiErrorMessage, apiFetch, ApiError } from '@/lib/api';
 import { useSessionStore } from '@/stores/sessionStore';
 import { SkillPicker } from '@/components/profile/SkillPicker';
 import { RecoveryCodeDisplay } from '@/components/profile/RecoveryCodeDisplay';
@@ -153,12 +153,8 @@ export function OnboardingPage() {
       if (newSlugs.length > 0) {
         setSkills([...skills, ...newSlugs]);
       }
-    } catch {
-      // Mock fallback: add some mock skills
-      const mockSkills = ['typescript', 'react', 'node-js'].filter((s) => !skills.includes(s));
-      if (mockSkills.length > 0) {
-        setSkills([...skills, ...mockSkills.slice(0, 3)]);
-      }
+    } catch (err: unknown) {
+      setError(apiErrorMessage(err, 'Could not extract skills. You can select them manually.'));
     } finally {
       setExtracting(false);
     }
@@ -181,42 +177,32 @@ export function OnboardingPage() {
 
     setSubmitting(true);
     try {
-      let res: CreatePersonResponse;
-      try {
-        res = await apiFetch<CreatePersonResponse>('/v1/people', {
-          method: 'POST',
-          body: JSON.stringify({
-            displayName: displayName.trim(),
-            handle: handle.trim(),
-            headline: headline.trim() || undefined,
-            bioRaw: bioRaw.trim() || undefined,
-            skills: skills.length > 0 ? skills : undefined,
-            availability,
-            language,
-          }),
-        });
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 409) {
-          setHandleError('This handle is already taken. Try another one.');
-          setSubmitting(false);
-          return;
-        }
-        // Fallback: mock profile creation when backend is unavailable
-        const mockId = `per_${handle.trim()}`;
-        const mockToken = `mock_token_${Date.now()}`;
-        const mockCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-        setSession(mockId, mockToken);
-        useSessionStore.getState().setProfile({ name: displayName.trim(), headline: headline.trim(), bio: bioRaw.trim() });
-        setRecoveryCode(mockCode);
-        setStep('recovery');
-        setSubmitting(false);
-        return;
-      }
+      const res = await apiFetch<CreatePersonResponse>('/v1/people', {
+        method: 'POST',
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          handle: handle.trim(),
+          headline: headline.trim() || undefined,
+          bioRaw: bioRaw.trim() || undefined,
+          skills: skills.length > 0 ? skills : undefined,
+          availability,
+          language,
+        }),
+      });
 
       setSession(res.person.id, res.sessionToken);
       useSessionStore.getState().setProfile({ name: res.person.displayName, headline: res.person.headline ?? '', bio: res.person.bio ?? '' });
       setRecoveryCode(res.recoveryCode);
       setStep('recovery');
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 409) {
+        setHandleError('This handle is already taken. Try another one.');
+      } else {
+        setError(apiErrorMessage(
+          err,
+          'Could not create your profile. Check that the API is running and try again.',
+        ));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -242,15 +228,14 @@ export function OnboardingPage() {
       });
       setSession(res.personId, res.sessionToken);
       navigate('/discover', { replace: true });
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 404) {
         setLoginError('Recovery code not found. Please check and try again.');
       } else {
-        // Mock fallback for demo
-        const mockId = `per_recovered_${Date.now()}`;
-        const mockToken = `mock_token_${Date.now()}`;
-        setSession(mockId, mockToken);
-        navigate('/discover', { replace: true });
+        setLoginError(apiErrorMessage(
+          err,
+          'Could not recover your profile. Check that the API is running and try again.',
+        ));
       }
     } finally {
       setLoggingIn(false);

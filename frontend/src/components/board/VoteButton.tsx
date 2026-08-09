@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiErrorMessage, apiFetch } from '@/lib/api';
 import { useBoardStore } from '@/stores/boardStore';
 
 interface VoteButtonProps {
@@ -15,26 +15,27 @@ interface VoteButtonProps {
 
 export function VoteButton({ cardId, votes, myVote, teamId }: VoteButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleToggle = async () => {
     if (loading) return;
     setLoading(true);
+    setError(null);
 
     try {
+      let result: { votes: number };
       if (myVote) {
-        await apiFetch(`/v1/teams/${teamId}/board/cards/${cardId}/vote`, {
+        result = await apiFetch<{ votes: number }>(`/v1/teams/${teamId}/board/cards/${cardId}/vote`, {
           method: 'DELETE',
         });
       } else {
-        await apiFetch(`/v1/teams/${teamId}/board/cards/${cardId}/vote`, {
+        result = await apiFetch<{ votes: number }>(`/v1/teams/${teamId}/board/cards/${cardId}/vote`, {
           method: 'POST',
         });
       }
-    } catch {
-      // Mock mode: toggle locally
-      const store = useBoardStore.getState();
-      const newVotes = myVote ? votes - 1 : votes + 1;
-      store.setVotes(cardId, Math.max(0, newVotes), !myVote);
+      useBoardStore.getState().setVotes(cardId, result.votes, !myVote);
+    } catch (error: unknown) {
+      setError(apiErrorMessage(error, 'Could not update your vote.'));
     } finally {
       setLoading(false);
     }
@@ -43,9 +44,11 @@ export function VoteButton({ cardId, votes, myVote, teamId }: VoteButtonProps) {
   return (
     <button
       onClick={handleToggle}
+      onPointerDown={(event) => event.stopPropagation()}
       disabled={loading}
       className="flex items-center gap-1 text-xs transition-colors hover:scale-105 active:scale-95 disabled:opacity-50"
       aria-label={myVote ? 'Remove vote' : 'Add vote'}
+      title={error ?? undefined}
     >
       {myVote ? (
         <svg
@@ -76,6 +79,7 @@ export function VoteButton({ cardId, votes, myVote, teamId }: VoteButtonProps) {
       <span className={myVote ? 'text-red font-semibold' : 'text-muted'}>
         {votes}
       </span>
+      {error && <span className="text-red-400" aria-label={error}>!</span>}
     </button>
   );
 }

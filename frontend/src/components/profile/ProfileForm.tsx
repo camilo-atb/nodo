@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { apiFetch, ApiError } from '@/lib/api';
+import { apiErrorMessage, apiFetch, ApiError } from '@/lib/api';
 import { useSessionStore } from '@/stores/sessionStore';
 import { Button } from '@/components/base/Button';
 import { Spinner } from '@/components/base/Spinner';
@@ -64,38 +64,30 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
 
     setSubmitting(true);
     try {
-      let res: CreatePersonResponse;
-      try {
-        res = await apiFetch<CreatePersonResponse>('/v1/people', {
-          method: 'POST',
-          body: JSON.stringify({
-            displayName: displayName.trim(),
-            handle: handle.trim(),
-            headline: headline.trim() || undefined,
-            bioRaw: bioRaw.trim() || undefined,
-            skills: skills.length > 0 ? skills : undefined,
-            availability,
-            language,
-          }),
-        });
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 409) {
-          setHandleError('This handle is already taken. Try another one.');
-          setSubmitting(false);
-          return;
-        }
-        // Fallback: mock profile creation when backend is unavailable
-        const mockId = `per_${handle.trim()}`;
-        const mockToken = `mock_token_${Date.now()}`;
-        const mockCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-        setSession(mockId, mockToken);
-        onSuccess(mockCode);
-        setSubmitting(false);
-        return;
-      }
+      const res = await apiFetch<CreatePersonResponse>('/v1/people', {
+        method: 'POST',
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          handle: handle.trim(),
+          headline: headline.trim() || undefined,
+          bioRaw: bioRaw.trim() || undefined,
+          skills: skills.length > 0 ? skills : undefined,
+          availability,
+          language,
+        }),
+      });
 
       setSession(res.person.id, res.sessionToken);
       onSuccess(res.recoveryCode);
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 409) {
+        setHandleError('This handle is already taken. Try another one.');
+      } else {
+        setError(apiErrorMessage(
+          err,
+          'Could not create your profile. Check that the API is running and try again.',
+        ));
+      }
     } finally {
       setSubmitting(false);
     }

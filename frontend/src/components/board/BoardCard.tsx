@@ -4,10 +4,11 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiErrorMessage, apiFetch } from '@/lib/api';
 import { useBoardStore } from '@/stores/boardStore';
 import { VoteButton } from './VoteButton';
 import type { BoardCard as BoardCardType } from '@/stores/boardStore';
+import type { CardDragPhase, RemoteBoardPeer } from '@/hooks/useBoardSync';
 
 interface BoardCardProps {
   card: BoardCardType;
@@ -15,77 +16,146 @@ interface BoardCardProps {
   teamId: string;
   onSelectWinner?: (cardId: string) => void;
   winnerMode?: boolean;
+  remotePeer?: RemoteBoardPeer;
+  onFocusSignal: (cardId: string | null) => void;
+  onDragSignal: (signal: {
+    cardId: string;
+    x: number;
+    y: number;
+    phase: CardDragPhase;
+  }) => void;
 }
 
-export function BoardCard({ card, teamId, onSelectWinner, winnerMode }: BoardCardProps) {
+export function BoardCard({
+  card,
+  teamId,
+  onSelectWinner,
+  winnerMode,
+  remotePeer,
+  onFocusSignal,
+  onDragSignal,
+}: BoardCardProps) {
   const [dragging, setDragging] = useState(false);
   const [localPos, setLocalPos] = useState({ x: card.x, y: card.y });
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(card.content);
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   const dragOffset = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
+  const localPosRef = useRef({ x: card.x, y: card.y });
+  const previousPosRef = useRef({ x: card.x, y: card.y });
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Sync position from store when not dragging
-  const displayX = dragging ? localPos.x : card.x;
-  const displayY = dragging ? localPos.y : card.y;
+  const remoteDrag = remotePeer?.dragging?.cardId === card.id ? remotePeer.dragging : undefined;
+  const displayX = dragging ? localPos.x : (remoteDrag?.x ?? card.x);
+  const displayY = dragging ? localPos.y : (remoteDrag?.y ?? card.y);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      if (editing || winnerMode) return;
+      if (editing || winnerMode || (e.target as HTMLElement).closest('button, textarea')) return;
       e.preventDefault();
       e.stopPropagation();
 
-      const rect = cardRef.current?.parentElement?.getBoundingClientRect();
-      if (!rect) return;
+      const canvasRect = cardRef.current?.parentElement?.getBoundingClientRect();
+      if (!canvasRect) return;
+
+      const pointerX = e.clientX - canvasRect.left;
+      const pointerY = e.clientY - canvasRect.top;
 
       dragOffset.current = {
-        x: e.clientX - displayX,
-        y: e.clientY - displayY,
+        x: pointerX - displayX,
+        y: pointerY - displayY,
       };
 
+      const position = { x: displayX, y: displayY };
+      previousPosRef.current = { x: card.x, y: card.y };
+      localPosRef.current = position;
+      draggingRef.current = true;
+      setLocalPos(position);
       setDragging(true);
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      onFocusSignal(card.id);
+      onDragSignal({ cardId: card.id, ...position, phase: 'start' });
     },
-    [editing, winnerMode, displayX, displayY],
+    [card.id, card.x, card.y, editing, winnerMode, displayX, displayY, onFocusSignal, onDragSignal],
   );
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!dragging) return;
+      if (!draggingRef.current) return;
       e.preventDefault();
 
-      const newX = Math.max(0, Math.min(1000, e.clientX - dragOffset.current.x));
-      const newY = Math.max(0, Math.min(720, e.clientY - dragOffset.current.y));
+      const canvasRect = cardRef.current?.parentElement?.getBoundingClientRect();
+      if (!canvasRect) return;
+      const newX = Math.max(
+        0,
+        Math.min(1000, e.clientX - canvasRect.left - dragOffset.current.x),
+      );
+      const newY = Math.max(
+        0,
+        Math.min(720, e.clientY - canvasRect.top - dragOffset.current.y),
+      );
 
-      setLocalPos({ x: newX, y: newY });
+      const position = { x: newX, y: newY };
+      localPosRef.current = position;
+      setLocalPos(position);
+      onDragSignal({ cardId: card.id, ...position, phase: 'move' });
     },
-    [dragging],
+    [card.id, onDragSignal],
   );
 
   const handlePointerUp = useCallback(
     async (e: React.PointerEvent) => {
-      if (!dragging) return;
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
       setDragging(false);
 
       const store = useBoardStore.getState();
-      store.moveCard(card.id, localPos.x, localPos.y);
+      const position = localPosRef.current;
+      const previous = previousPosRef.current;
+      store.moveCard(card.id, position.x, position.y);
+      onDragSignal({ cardId: card.id, ...position, phase: 'end' });
+      setOperationError(null);
 
       try {
         await apiFetch(`/v1/teams/${teamId}/board/cards/${card.id}/move`, {
           method: 'POST',
-          body: JSON.stringify({ x: localPos.x, y: localPos.y }),
+          body: JSON.stringify(position),
         });
-      } catch {
-        // Mock mode: position already updated locally
+      } catch (error: unknown) {
+        store.moveCard(card.id, previous.x, previous.y);
+        localPosRef.current = previous;
+        setLocalPos(previous);
+        onDragSignal({ cardId: card.id, ...previous, phase: 'cancel' });
+        setOperationError(apiErrorMessage(error, 'Could not save the new position.'));
       }
     },
-    [dragging, localPos, card.id, teamId],
+    [card.id, teamId, onDragSignal],
+  );
+
+  const handlePointerCancel = useCallback(
+    (e: React.PointerEvent) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+      const previous = previousPosRef.current;
+      localPosRef.current = previous;
+      setLocalPos(previous);
+      onDragSignal({ cardId: card.id, ...previous, phase: 'cancel' });
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    },
+    [card.id, onDragSignal],
   );
 
   const handleDoubleClick = () => {
     if (winnerMode) return;
+    onFocusSignal(card.id);
     setEditing(true);
     setEditContent(card.content);
   };
@@ -99,14 +169,17 @@ export function BoardCard({ card, teamId, onSelectWinner, winnerMode }: BoardCar
 
     const store = useBoardStore.getState();
     store.updateCard(card.id, content);
+    setOperationError(null);
 
     try {
       await apiFetch(`/v1/teams/${teamId}/board/cards/${card.id}`, {
         method: 'PATCH',
         body: JSON.stringify({ content }),
       });
-    } catch {
-      // Mock mode: content already updated locally
+    } catch (error: unknown) {
+      store.updateCard(card.id, card.content);
+      setEditContent(card.content);
+      setOperationError(apiErrorMessage(error, 'Could not save this card.'));
     }
   };
 
@@ -132,20 +205,34 @@ export function BoardCard({ card, teamId, onSelectWinner, winnerMode }: BoardCar
   return (
     <div
       ref={cardRef}
-      className={`absolute w-[200px] min-h-[80px] rounded-lg border border-border bg-panel shadow-lg select-none transition-shadow ${
-        dragging ? 'shadow-xl z-50 cursor-grabbing' : 'cursor-grab z-10'
+      className={`absolute w-[200px] min-h-[80px] rounded-lg border border-border bg-panel shadow-lg select-none ease-out ${
+        dragging
+          ? 'shadow-xl z-50 cursor-grabbing will-change-transform transition-none'
+          : remoteDrag
+            ? 'shadow-xl z-50 cursor-grabbing will-change-transform transition-transform duration-75'
+            : 'cursor-grab z-10 transition-[box-shadow,transform] duration-100'
       } ${card.isWinner ? 'ring-2 ring-amber' : ''} ${
         winnerMode ? 'hover:ring-2 hover:ring-accent cursor-pointer' : ''
       }`}
       style={{
-        transform: `translate(${displayX}px, ${displayY}px)`,
+        transform: `translate(${displayX}px, ${displayY}px) scale(${dragging || remoteDrag ? 1.015 : 1})`,
+        boxShadow: remotePeer ? `0 0 0 2px ${remotePeer.color}, 0 14px 30px rgba(0,0,0,.3)` : undefined,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onDoubleClick={handleDoubleClick}
       onClick={handleClick}
     >
+      {remotePeer && (
+        <div
+          className="pointer-events-none absolute -top-7 left-0 max-w-[180px] truncate rounded-md px-2 py-1 text-[10px] font-semibold text-slate-950 shadow-lg"
+          style={{ backgroundColor: remotePeer.color }}
+        >
+          {remotePeer.displayName} {remoteDrag ? 'is moving' : 'selected'}
+        </div>
+      )}
       {/* Color bar */}
       <div
         className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
@@ -192,6 +279,11 @@ export function BoardCard({ card, teamId, onSelectWinner, winnerMode }: BoardCar
             {initials}
           </div>
         </div>
+        {operationError && (
+          <p role="alert" className="mt-2 text-[10px] leading-tight text-red-400">
+            {operationError}
+          </p>
+        )}
       </div>
     </div>
   );

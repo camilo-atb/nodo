@@ -14,8 +14,7 @@ import type { ApplicationDTO, SuggestionDTO } from '@nodo/contracts';
  * 2. El canal no se identifica con `ctx.channelId` sino con `ctx.channel.id`
  *    (`ChannelRef` trae también `key` y `mode`).
  *
- * El resto —`claimMap`, la forma de `notify`, `publish: false` en todos los
- * canales— coincide con lo documentado.
+ * Los clientes no publican cambios de dominio directamente en Portal.
  */
 export default defineConfig({
   webhooks: {
@@ -68,7 +67,7 @@ export default defineConfig({
         const teamsClaim = ctx.claims.teams as Record<string, string> | undefined;
         const role = teamsClaim?.[teamId];
         if (!role) return block('No perteneces a este equipo.');
-        return allow({ publish: false, isMember: role === 'member' });
+        return allow({ publish: false, sendDirect: false, isMember: role === 'member' });
       },
 
       notify: (ctx) => {

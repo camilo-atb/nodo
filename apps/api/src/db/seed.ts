@@ -4,8 +4,14 @@ import { eq } from 'drizzle-orm';
 import { eventSubscriptions, nodes, people, skillAliases, skills } from './schema.js';
 import { SKILLS, SKILL_ALIASES } from './vocabulary.js';
 import { createPerson } from './people-repo.js';
-import { addMember, createTeam, deriveAndPersistTeamStatus } from './teams-repo.js';
+import {
+  addMember,
+  createTeam,
+  deriveAndPersistTeamStatus,
+  findTeamRow,
+} from './teams-repo.js';
 import { createIdea } from './ideas-repo.js';
+import { getPersonTeamId } from './people-repo.js';
 import { personId, recoveryCode, sessionToken, teamId, ideaId } from '../domain/ids.js';
 import { DEFAULT_EVENT_ID, type SkillRef } from '@nodo/contracts';
 import { events } from './schema.js';
@@ -206,6 +212,103 @@ const seedRepresentativeSet = async (db: ReturnType<typeof createDb>['db']): Pro
   console.log('[seed] conjunto representativo: 6 personas, 1 idea, 2 equipos.');
 };
 
+// Credenciales deliberadamente públicas y deterministas para probar el board
+// realtime en dos navegadores. Este conjunto jamás se crea en producción.
+export const BOARD_DEMO = {
+  eventId: DEFAULT_EVENT_ID,
+  teamId: 'tm_realtime_board',
+  boardPath: `/event/${DEFAULT_EVENT_ID}/team/tm_realtime_board/board`,
+  users: [
+    {
+      id: 'per_board_alice',
+      handle: 'board_alice',
+      displayName: 'Board Alice',
+      recoveryCode: 'BRD001',
+      sessionToken: 'dev_board_alice_session_token',
+    },
+    {
+      id: 'per_board_bob',
+      handle: 'board_bob',
+      displayName: 'Board Bob',
+      recoveryCode: 'BRD002',
+      sessionToken: 'dev_board_bob_session_token',
+    },
+  ],
+} as const;
+
+const seedBoardDemo = async (db: ReturnType<typeof createDb>['db']): Promise<void> => {
+  const personIds: string[] = [];
+
+  for (const demo of BOARD_DEMO.users) {
+    const [existing] = await db
+      .select({ id: people.id })
+      .from(people)
+      .where(eq(people.handle, demo.handle));
+
+    const id = existing?.id ?? demo.id;
+    if (!existing) {
+      await createPerson(db, {
+        id,
+        handle: demo.handle,
+        displayName: demo.displayName,
+        headline: 'Realtime board tester',
+        bioRaw: 'Perfil determinista para probar el tablero en dos navegadores.',
+        availability: 'full',
+        language: 'es',
+        sessionToken: demo.sessionToken,
+        recoveryCode: demo.recoveryCode,
+        skills: [skill('frontend')],
+      });
+    } else {
+      // Recuperar una cuenta rota siempre rota el session token. Re-sembrar
+      // restaura las credenciales documentadas para que la demo sea repetible.
+      await db
+        .update(people)
+        .set({
+          displayName: demo.displayName,
+          sessionToken: demo.sessionToken,
+          recoveryCode: demo.recoveryCode,
+        })
+        .where(eq(people.id, id));
+      await db.update(nodes).set({ label: demo.displayName }).where(eq(nodes.id, id));
+    }
+
+    await db
+      .insert(eventSubscriptions)
+      .values({ eventId: BOARD_DEMO.eventId, personId: id })
+      .onConflictDoNothing();
+    personIds.push(id);
+  }
+
+  if (!(await findTeamRow(db, BOARD_DEMO.teamId))) {
+    await createTeam(db, {
+      id: BOARD_DEMO.teamId,
+      name: 'Realtime Board Demo',
+      pitch: 'Equipo listo para probar sincronización del board en dos navegadores.',
+      leadId: personIds[0]!,
+      ideaId: null,
+      eventId: BOARD_DEMO.eventId,
+      maxSize: 4,
+      needs: [],
+    });
+  }
+
+  for (const id of personIds) {
+    const currentTeamId = await getPersonTeamId(db, id);
+    if (currentTeamId === null) await addMember(db, BOARD_DEMO.teamId, id);
+    if (currentTeamId !== null && currentTeamId !== BOARD_DEMO.teamId) {
+      throw new Error(`Seed board demo: ${id} ya pertenece a ${currentTeamId}.`);
+    }
+    await db.update(nodes).set({ status: 'teamed' }).where(eq(nodes.id, id));
+  }
+  await deriveAndPersistTeamStatus(db, BOARD_DEMO.teamId, false);
+
+  console.log('[seed] board realtime listo:');
+  console.log(`  URL: http://localhost:5173${BOARD_DEMO.boardPath}`);
+  console.log(`  Browser A: ${BOARD_DEMO.users[0].handle} / ${BOARD_DEMO.users[0].recoveryCode}`);
+  console.log(`  Browser B: ${BOARD_DEMO.users[1].handle} / ${BOARD_DEMO.users[1].recoveryCode}`);
+};
+
 /**
  * Evento abierto por defecto (ADR-013). **Obligatorio en cualquier entorno**,
  * como el vocabulario: `teams.event_id` e `ideas.event_id` son `NOT NULL` y
@@ -240,6 +343,7 @@ const main = async (): Promise<void> => {
     } else {
       await seedRepresentativeSet(db);
     }
+    await seedBoardDemo(db);
   }
 
   await sql.end();

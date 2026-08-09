@@ -216,7 +216,7 @@ export function TeamPage() {
         {/* Apply button for non-members */}
         {!isMember && (
           <section className="mb-6">
-            <ApplyButton teamId={team.id} teamName={team.name} />
+            <ApplyButton teamId={team.id} teamName={team.name} eventId={team.eventId} />
           </section>
         )}
 

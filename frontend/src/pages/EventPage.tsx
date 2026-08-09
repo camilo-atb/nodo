@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
-import { apiFetch } from '@/lib/api';
+import { apiErrorMessage, apiFetch } from '@/lib/api';
 import { Badge } from '@/components/base/Badge';
 import { Button } from '@/components/base/Button';
 import { Spinner } from '@/components/base/Spinner';
@@ -24,6 +24,7 @@ export function EventPage() {
   const { events, setCurrentEvent } = useEventStore();
   const [joining, setJoining] = useState(false);
   const [event, setEvent] = useState<NodoEvent | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const [joined, setJoined] = useState<boolean | null>(null);
 
@@ -31,9 +32,16 @@ export function EventPage() {
     if (!eventId) return;
     setCurrentEvent(eventId);
     setJoined(null);
+    setJoinError(null);
     void apiFetch<EventSubscriptionResponse>(`/v1/events/${eventId}/subscription`)
       .then(({ subscribed }) => setJoined(subscribed))
-      .catch(() => setJoined(false));
+      .catch((error: unknown) => {
+        setJoined(false);
+        setJoinError(apiErrorMessage(
+          error,
+          'Could not verify your participation. Check that the API is running and the database is migrated.',
+        ));
+      });
 
     const found = events.find((e) => e.id === eventId);
     if (found) {
@@ -53,6 +61,7 @@ export function EventPage() {
   async function handleJoin() {
     if (!eventId) return;
     setJoining(true);
+    setJoinError(null);
     try {
       await apiFetch<EventSubscriptionResponse>(`/v1/events/${eventId}/subscription`, {
         method: 'POST',
@@ -61,10 +70,15 @@ export function EventPage() {
       // reautenticar antes de montar el canal recién autorizado.
       portal.setToken(fetchPortalToken);
       setJoined(true);
-    } catch {
+    } catch (error: unknown) {
       setJoined(false);
+      setJoinError(apiErrorMessage(
+        error,
+        'Could not join this event. Check that the API is running and try again.',
+      ));
+    } finally {
+      setJoining(false);
     }
-    setJoining(false);
   }
 
   if (!event || joined === null) {
@@ -124,6 +138,11 @@ export function EventPage() {
         <Button onClick={handleJoin} disabled={joining} className="w-full">
           {joining ? 'Joining...' : event.kind === 'project' ? 'Join Project' : 'Join Event'}
         </Button>
+        {joinError && (
+          <p role="alert" className="mt-3 text-sm text-red-400">
+            {joinError}
+          </p>
+        )}
       </div>
     </div>
   );
