@@ -30,7 +30,7 @@ export const createApp = (ctx: AppContext) => {
   app.use(
     '*',
     cors({
-      origin: ctx.env.NODE_ENV === 'production' ? [] : '*',
+      origin: '*',
       allowHeaders: ['content-type', 'authorization', 'x-recovery-code'],
     }),
   );
