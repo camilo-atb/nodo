@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraphPanel } from '@/components/graph/GraphPanel';
 import { ConnectionBanner } from '@/components/layout/ConnectionBanner';
+import { AIChatPanel } from '@/components/graph/AIChatPanel';
 import type { GraphFilter } from '@/types/ui';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
@@ -82,6 +83,9 @@ export function MainLayout({ eventId }: { eventId: string }) {
             onNodeSelect={() => setSelectedNodeId(null)}
           />
         </div>
+
+        {/* AI Chat */}
+        <AIChatPanel />
       </div>
     </>
   );
