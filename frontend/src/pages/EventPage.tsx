@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
 import { apiErrorMessage, apiFetch } from '@/lib/api';
 import { Badge } from '@/components/base/Badge';
@@ -21,6 +21,7 @@ const typeLabels: Record<EventType, string> = {
 
 export function EventPage() {
   const { eventId } = useParams<{ eventId: string }>();
+  const navigate = useNavigate();
   const { events, setCurrentEvent } = useEventStore();
   const [joining, setJoining] = useState(false);
   const [event, setEvent] = useState<NodoEvent | null>(null);
@@ -99,6 +100,14 @@ export function EventPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa] dark:bg-[#07090c]">
+      {/* Back button */}
+      <button
+        onClick={() => navigate('/discover')}
+        className="absolute top-6 left-6 text-xs text-gray-500 hover:text-[#111318] dark:text-[#9da6b1] dark:hover:text-white transition-colors"
+      >
+        ← Back to Discover
+      </button>
+
       <div className="max-w-md w-full mx-4 border rounded-2xl p-6
         bg-white border-gray-200
         dark:bg-[#101317] dark:border-[#20262d]">

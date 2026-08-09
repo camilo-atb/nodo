@@ -70,7 +70,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
   const [team, setTeam] = useState<TeamDTO | null>(null);
   const [applications, setApplications] = useState<ApplicationDTO[]>([]);
   const [_loading, setLoading] = useState(false);
-  const [launchModalOpen, setLaunchModalOpen] = useState(false);
 
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -113,23 +112,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
     }
   }
 
-  async function handleLaunchChallenge(skillSlug: string) {
-    if (!myTeamId) return;
-    try {
-      const res = await apiFetch<{ id: string; title: string; status: string; skillSlug: string }>(
-        `/v1/teams/${myTeamId}/challenges`,
-        { method: 'POST', body: JSON.stringify({ skillSlug }) },
-      );
-      if (res?.id) {
-        setLaunchModalOpen(false);
-        if (currentEventId) {
-          navigate(`/event/${currentEventId}/team/${myTeamId}/challenge/${res.id}`);
-          onClose();
-        }
-      }
-    } catch { /* endpoint may fail if LLM unavailable */ }
-  }
-
   if (!open) return null;
 
   // No team state
@@ -169,7 +151,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
         {/* Header */}
         <div className="shrink-0 border-b border-gray-200 dark:border-[#202832] px-5 pb-4 pt-5">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-[.14em] text-gray-400 dark:text-[#68717d]">{labels.panelTitle}</span>
+            <span className="text-[11px] font-bold uppercase tracking-[.14em] text-gray-400 dark:text-[#68717d]">{labels.panelTitle}</span>
             <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-[#151b22] transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -183,14 +165,14 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-lg font-semibold text-[#111318] dark:text-[#f4f6f8]">{team.name}</h1>
-                  <span className="rounded-md border border-[#21d69a]/20 bg-[#21d69a]/[.08] px-1.5 py-0.5 text-[9px] font-bold uppercase text-[#21d69a]">
+                  <span className="rounded-md border border-[#21d69a]/20 bg-[#21d69a]/[.08] px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#21d69a]">
                     {team.status}
                   </span>
                 </div>
                 {team.pitch && <p className="mt-1.5 text-xs leading-5 text-gray-500 dark:text-gray-400">{team.pitch}</p>}
                 <div className="mt-2.5 flex items-center gap-2">
-                  <span className="text-[10px] text-gray-400">Your role</span>
-                  <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${isLeader ? 'bg-[#8b5cf6]/10 text-[#a78bfa]' : 'bg-[#12c7e5]/[.08] text-[#12c7e5]'}`}>
+                  <span className="text-[11px] text-gray-400">Your role</span>
+                  <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${isLeader ? 'bg-[#8b5cf6]/10 text-[#a78bfa]' : 'bg-[#12c7e5]/[.08] text-[#12c7e5]'}`}>
                     {isLeader ? labels.leaderBadge : labels.roleBadge}
                   </span>
                 </div>
@@ -207,10 +189,10 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
               <div className="mb-3.5 flex items-center justify-between">
                 <div>
                   <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">{labels.membersTitle}</h2>
-                  <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">{team.members.length} / {team.maxSize} {isProject ? 'contributors' : 'people'}</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400 dark:text-[#68717d]">{team.members.length} / {team.maxSize} {isProject ? 'contributors' : 'people'}</p>
                 </div>
                 {onlineCount > 0 && (
-                  <span className="flex items-center gap-1 text-[9px] text-[#21d69a]">
+                  <span className="flex items-center gap-1 text-[10px] text-[#21d69a]">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#21d69a]" />
                     {onlineCount} online
                   </span>
@@ -249,42 +231,21 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
           {/* Quick actions */}
           <section className="border-b border-gray-200 dark:border-[#202832] px-5 py-5">
             <div className="mb-3.5">
-              <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Quick actions</h2>
-              <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Jump into your team's workspace</p>
+              <h2 className="text-sm font-semibold text-[#111318] dark:text-[#f4f6f8]">Workspace</h2>
+              <p className="mt-0.5 text-xs text-gray-400 dark:text-[#68717d]">Collaborate with your team</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {/* Open Board */}
-              <button
-                onClick={() => {
-                  if (currentEventId && myTeamId) {
-                    navigate(`/event/${currentEventId}/team/${myTeamId}/board`);
-                    onClose();
-                  }
-                }}
-                className="min-h-[78px] rounded-[10px] border p-3 text-left transition-all hover:-translate-y-0.5
-                  border-gray-200 bg-gray-50 dark:border-[#202832] dark:bg-[#10151b]"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#12c7e5]/[.08] text-[#12c7e5] text-base">▤</span>
-                <span className="mt-3 flex justify-between text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">
-                  {labels.boardAction} <span className="text-gray-400">→</span>
-                </span>
-              </button>
-
-              {/* Launch Challenge (leader only) */}
-              {isLeader && (
-                <button
-                  onClick={() => setLaunchModalOpen(true)}
-                  className="min-h-[78px] rounded-[10px] border p-3 text-left transition-all hover:-translate-y-0.5
-                    border-gray-200 bg-gray-50 dark:border-[#202832] dark:bg-[#10151b]"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#8b5cf6]/[.09] text-[#a78bfa] text-base">ϟ</span>
-                  <span className="mt-3 flex justify-between text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">
-                    {labels.challengeAction} <span className="text-gray-400">→</span>
-                  </span>
-                  <span className="block text-[8px] text-gray-400 mt-0.5">{labels.challengeNote}</span>
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => {
+                if (currentEventId && myTeamId) {
+                  navigate(`/event/${currentEventId}/team/${myTeamId}/board`);
+                  onClose();
+                }
+              }}
+              className="w-full h-11 flex items-center justify-center gap-2 rounded-[10px] text-sm font-bold transition-colors
+                bg-[#12c7e5] text-[#001a20] hover:bg-[#0fb5d0]"
+            >
+              {labels.boardAction} →
+            </button>
           </section>
 
           {/* Pending applications (leader only) */}
@@ -295,7 +256,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                   <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Pending requests</h2>
                   <span className="rounded-full bg-amber-500/10 px-1.5 text-[8px] font-bold text-amber-500">{applications.length}</span>
                 </div>
-                <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Visible to {isProject ? 'owners' : 'team leaders'}</p>
+                <p className="mt-0.5 text-[11px] text-gray-400 dark:text-[#68717d]">Visible to {isProject ? 'owners' : 'team leaders'}</p>
               </div>
               <div className="space-y-2">
                 {applications.map((app) => (
@@ -305,7 +266,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                         {getInitials(app.person.displayName)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">{app.person.displayName}</div>
+                        <div className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">{app.person.displayName}</div>
                         {app.message && <div className="text-[9px] text-gray-400 dark:text-[#68717d] truncate mt-0.5">{app.message}</div>}
                       </div>
                       <div className="flex gap-1">
@@ -335,77 +296,12 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
         </div>
       </aside>
 
-      {/* Launch Challenge Modal */}
-      {launchModalOpen && team && (
-        <LaunchChallengeModal
-          needs={team.needs}
-          onClose={() => setLaunchModalOpen(false)}
-          onLaunch={handleLaunchChallenge}
-        />
-      )}
+      {/* Launch Challenge Modal — hidden for MVP */}
     </>
   );
 }
 
-// ─── Launch Challenge Modal ──────────────────────────────────────────────────
-
-function LaunchChallengeModal({ needs, onClose, onLaunch }: {
-  needs: { slug: string; label: string }[];
-  onClose: () => void;
-  onLaunch: (skillSlug: string) => void;
-}) {
-  const [selectedSkill, setSelectedSkill] = useState(needs[0]?.slug ?? '');
-  const [launching, setLaunching] = useState(false);
-
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-[410px] rounded-[14px] border p-5 shadow-2xl
-        bg-white border-gray-200
-        dark:bg-[#0d1116] dark:border-[#202832]">
-        <div className="flex justify-between">
-          <div>
-            <div className="text-[9px] font-bold uppercase tracking-[.14em] text-[#8b5cf6]">Launch challenge</div>
-            <h3 className="mt-1 text-base font-semibold text-[#111318] dark:text-[#f4f6f8]">Test a team skill</h3>
-            <p className="mt-1 text-[10px] text-gray-400 dark:text-[#68717d]">Nodo generates the questions automatically.</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white text-lg">×</button>
-        </div>
-
-        <label className="mt-5 block text-[10px] font-semibold text-gray-500 dark:text-[#9da6b1]">Skill</label>
-        <select
-          value={selectedSkill}
-          onChange={(e) => setSelectedSkill(e.target.value)}
-          className="mt-1.5 h-10 w-full rounded-[9px] border px-3 text-xs
-            border-gray-200 bg-white text-[#111318]
-            dark:border-[#29333f] dark:bg-[#10151b] dark:text-white
-            focus:outline-none focus:ring-1 focus:ring-[#8b5cf6]"
-        >
-          {needs.map((n) => (
-            <option key={n.slug} value={n.slug}>{n.label}</option>
-          ))}
-        </select>
-
-        <div className="mt-4 rounded-[9px] bg-[#8b5cf6]/[.06] p-3 text-[10px] text-gray-500 dark:text-gray-400">
-          ✦ All team members receive the challenge in realtime.
-        </div>
-
-        <div className="mt-5 flex gap-2">
-          <button
-            onClick={onClose}
-            className="h-9 flex-1 rounded-[9px] border text-xs font-medium
-              border-gray-200 text-gray-600 hover:bg-gray-50
-              dark:border-[#29333f] dark:text-gray-400 dark:hover:bg-[#10151b] transition-colors"
-          >Cancel</button>
-          <button
-            onClick={async () => { setLaunching(true); await onLaunch(selectedSkill); setLaunching(false); }}
-            disabled={!selectedSkill || launching}
-            className="h-9 flex-1 rounded-[9px] bg-[#8b5cf6] text-xs font-bold text-white hover:bg-[#7c3aed] disabled:opacity-50 transition-colors"
-          >{launching ? 'Launching...' : 'Launch'}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

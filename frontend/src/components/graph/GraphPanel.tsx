@@ -65,6 +65,8 @@ export function GraphPanel({ filter: externalFilter, searchQuery, onNodeSelect, 
     fg.d3Force('link')?.distance(100);
   }, [data]);
 
+  // No periodic reheat needed — d3AlphaMin={0} keeps render loop alive
+
   // Build adjacency set for hover-highlight
   const adjacency = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -232,15 +234,16 @@ export function GraphPanel({ filter: externalFilter, searchQuery, onNodeSelect, 
           ctx.fill();
         }}
         backgroundColor="rgba(0,0,0,0)"
-        cooldownTicks={300}
+        cooldownTicks={Infinity}
         warmupTicks={200}
         nodeId="id"
         linkSource="source"
         linkTarget="target"
         width={containerRef.current?.clientWidth}
         height={containerRef.current?.clientHeight}
-        d3VelocityDecay={0.3}
-        d3AlphaDecay={0.01}
+        d3VelocityDecay={0.4}
+        d3AlphaDecay={0.02}
+        d3AlphaMin={0}
         dagMode={undefined}
       />
 

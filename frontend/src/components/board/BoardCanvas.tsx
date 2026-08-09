@@ -40,10 +40,12 @@ export function BoardCanvas({
   return (
     <div className="flex-1 flex items-center justify-center overflow-auto p-4">
       <div
-        className="relative w-[1200px] h-[800px] rounded-xl border border-border bg-panel shrink-0"
+        className="relative w-[1200px] h-[800px] rounded-xl border shrink-0
+          bg-[#f7f8fa] border-gray-200
+          dark:bg-[#0d0f17] dark:border-[#202832]"
         style={{
           backgroundImage:
-            'radial-gradient(circle, rgba(255, 255, 255, 0.04) 1px, transparent 1px)',
+            'radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px)',
           backgroundSize: '24px 24px',
         }}
         onPointerMove={(event) => {

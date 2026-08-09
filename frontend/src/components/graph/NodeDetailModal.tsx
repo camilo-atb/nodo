@@ -88,7 +88,7 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
         {/* Kind badge */}
         <div className="mb-3">
           <span
-            className={`inline-block px-2 py-1 rounded-md text-[9px] font-extrabold uppercase tracking-[0.8px]
+            className={`inline-block px-2 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-[0.8px]
               ${node.kind === 'person'
                 ? 'bg-[#12c7e5]/10 text-[#12c7e5]'
                 : node.kind === 'team'
@@ -116,7 +116,7 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {getInitials(node.label)}
           </div>
           <div className="min-w-0">
-            <h3 className="text-base font-bold text-[#111318] dark:text-[#f4f6f8] truncate">
+            <h3 className="text-lg font-bold text-[#111318] dark:text-[#f4f6f8] truncate">
               {node.label}
             </h3>
             {headline && (
@@ -134,10 +134,10 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Bio */}
             {bio && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
                   Bio
                 </div>
-                <p className="text-sm text-[#111318] dark:text-[#f4f6f8] leading-relaxed">
+                <p className="text-[15px] text-[#111318] dark:text-[#f4f6f8] leading-relaxed">
                   {bio}
                 </p>
               </div>
@@ -146,7 +146,7 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Team membership */}
             {team && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
                   Team
                 </div>
                 <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border bg-[#21d69a]/5 border-[#21d69a]/20">
@@ -159,14 +159,14 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Skills */}
             {skills.length > 0 && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
                   Skills
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {skills.map((skill) => (
                     <span
                       key={skill}
-                      className="px-2 py-0.5 rounded-md text-[10px] font-medium border
+                      className="px-2 py-0.5 rounded-md text-xs font-medium border
                         bg-gray-50 border-gray-200 text-gray-600
                         dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#9da6b1]"
                     >
@@ -180,24 +180,24 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Availability */}
             {availability && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
                   Availability
                 </div>
-                <span className="text-xs text-[#111318] dark:text-[#f4f6f8] capitalize">{availability}</span>
+                <span className="text-[13px] text-[#111318] dark:text-[#f4f6f8] capitalize">{availability}</span>
               </div>
             )}
 
             {/* Status */}
             {node.status && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
                   Status
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className={`w-[6px] h-[6px] rounded-full ${
                     node.status === 'looking' ? 'bg-[#12c7e5]' : 'bg-[#21d69a]'
                   }`} />
-                  <span className="text-xs text-[#111318] dark:text-[#f4f6f8] capitalize">{node.status}</span>
+                  <span className="text-[13px] text-[#111318] dark:text-[#f4f6f8] capitalize">{node.status}</span>
                 </div>
               </div>
             )}
@@ -214,14 +214,14 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Status */}
             {node.status && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1">
                   Status
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className={`w-[6px] h-[6px] rounded-full ${
                     node.status === 'recruiting' ? 'bg-[#12c7e5]' : 'bg-[#21d69a]'
                   }`} />
-                  <span className="text-xs text-[#111318] dark:text-[#f4f6f8] capitalize">{node.status}</span>
+                  <span className="text-[13px] text-[#111318] dark:text-[#f4f6f8] capitalize">{node.status}</span>
                 </div>
               </div>
             )}
@@ -229,7 +229,7 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Members */}
             {members.length > 0 && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
                   Members ({members.length})
                 </div>
                 <div className="space-y-1.5">
@@ -238,7 +238,7 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
                       <div className="w-6 h-6 rounded-full bg-[#12c7e5]/10 border border-[#12c7e5]/30 flex items-center justify-center text-[8px] font-bold text-[#12c7e5]">
                         {getInitials(member.label)}
                       </div>
-                      <span className="text-xs text-[#111318] dark:text-[#f4f6f8]">{member.label}</span>
+                      <span className="text-[13px] text-[#111318] dark:text-[#f4f6f8]">{member.label}</span>
                     </div>
                   ))}
                   {members.length > 8 && (
@@ -253,14 +253,14 @@ export function NodeDetailModal({ node, onClose, skills, members, needs, team }:
             {/* Needs */}
             {needs.length > 0 && (
               <div>
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
+                <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-1.5">
                   Looking for
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {needs.map((need) => (
                     <span
                       key={need}
-                      className="px-2 py-0.5 rounded-md text-[10px] font-medium border
+                      className="px-2 py-0.5 rounded-md text-xs font-medium border
                         bg-amber-50 border-amber-200 text-amber-600
                         dark:bg-amber-500/10 dark:border-amber-500/20 dark:text-amber-400"
                     >
@@ -473,7 +473,7 @@ function InlineApplicationsPanel({ teamId, members }: { teamId: string; members:
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#20262d]">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-[#68717d] mb-2">
         Pending Applications ({applications.length})
       </div>
       <div className="space-y-2">

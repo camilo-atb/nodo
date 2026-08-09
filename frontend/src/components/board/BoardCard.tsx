@@ -205,7 +205,8 @@ export function BoardCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute w-[200px] min-h-[80px] rounded-lg border border-border bg-panel shadow-lg select-none ease-out ${
+      className={`absolute w-[200px] min-h-[80px] rounded-lg border shadow-lg select-none ease-out
+        bg-white border-gray-200 dark:bg-[#0d0f17] dark:border-[#202832] ${
         dragging
           ? 'shadow-xl z-50 cursor-grabbing will-change-transform transition-none'
           : remoteDrag
@@ -250,7 +251,7 @@ export function BoardCard({
       <div className="p-3 pl-4">
         {editing ? (
           <textarea
-            className="w-full bg-transparent text-white text-sm resize-none outline-none border-b border-accent"
+            className="w-full bg-transparent text-[#111318] dark:text-white text-sm resize-none outline-none border-b border-accent"
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             onBlur={handleEditBlur}
@@ -259,13 +260,13 @@ export function BoardCard({
             rows={3}
           />
         ) : (
-          <p className="text-sm text-white leading-relaxed break-words whitespace-pre-wrap">
+          <p className="text-sm text-[#111318] dark:text-white leading-relaxed break-words whitespace-pre-wrap">
             {card.content}
           </p>
         )}
 
         {/* Footer: votes + creator */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200 dark:border-[#202832]">
           <VoteButton
             cardId={card.id}
             votes={card.votes}
@@ -273,7 +274,7 @@ export function BoardCard({
             teamId={teamId}
           />
           <div
-            className="w-5 h-5 rounded-full bg-panel-3 border border-border flex items-center justify-center text-[8px] font-bold text-muted"
+            className="w-5 h-5 rounded-full bg-gray-100 dark:bg-[#15191e] border border-gray-200 dark:border-[#202832] flex items-center justify-center text-[8px] font-bold text-gray-500 dark:text-[#9da6b1]"
             title={card.createdBy}
           >
             {initials}

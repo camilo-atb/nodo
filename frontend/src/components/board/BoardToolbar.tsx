@@ -30,7 +30,9 @@ export function BoardToolbar({
   const [selectedColor, setSelectedColor] = useState(CARD_COLORS[0].value);
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-panel">
+    <div className="flex items-center gap-3 px-4 py-3 border-b
+      bg-white border-gray-200
+      dark:bg-[#0d0f17] dark:border-[#202832]">
       {/* Create card */}
       <Button
         variant="primary"

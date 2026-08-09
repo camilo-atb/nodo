@@ -133,11 +133,11 @@ export function LandingPage() {
         <div className="nodo-hero-status">
           <div className="nodo-status-item">
             <span className="nodo-status-dot nodo-dot-green" />
-            128 people online
+            Realtime collaboration
           </div>
           <div className="nodo-status-item">
             <span className="nodo-status-dot nodo-dot-cyan" />
-            24 matches happening now
+            AI-powered matching
           </div>
         </div>
       </section>

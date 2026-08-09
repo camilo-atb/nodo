@@ -322,7 +322,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
       <div className={`grid gap-1 p-1.5 border-b border-gray-100 dark:border-[#202832] ${isProject ? 'grid-cols-2' : 'grid-cols-3'}`}>
         <button
           onClick={() => onFilterChange({ ...filter, showPersons: !filter.showPersons })}
-          className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
+          className={`rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
             ${filter.showPersons
               ? 'bg-[#12c7e5]/10 text-[#12c7e5]'
               : 'text-gray-400 dark:text-[#68717d] hover:bg-gray-100 dark:hover:bg-[#15191e]'
@@ -333,7 +333,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         {!isProject && (
         <button
           onClick={() => onFilterChange({ ...filter, showTeams: !filter.showTeams })}
-          className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
+          className={`rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
             ${filter.showTeams
               ? 'bg-[#12c7e5]/10 text-[#12c7e5]'
               : 'text-gray-400 dark:text-[#68717d] hover:bg-gray-100 dark:hover:bg-[#15191e]'
@@ -344,7 +344,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         )}
         <button
           onClick={() => onFilterChange({ ...filter, showSkills: !filter.showSkills })}
-          className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
+          className={`rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors
             ${filter.showSkills
               ? 'bg-[#12c7e5]/10 text-[#12c7e5]'
               : 'text-gray-400 dark:text-[#68717d] hover:bg-gray-100 dark:hover:bg-[#15191e]'
@@ -375,14 +375,14 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
       <div>
         <button
           onClick={() => setPeopleOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold
             text-[#111318] dark:text-[#f4f6f8]
             hover:bg-gray-50 dark:hover:bg-[#15191e] transition-colors"
         >
           <span className="flex items-center gap-1.5">
             <span className="w-[6px] h-[6px] rounded-full bg-[#6d7aa3]" />
             {isProject ? 'Contributors' : 'People'}
-            <span className="text-[9px] text-gray-400 dark:text-[#68717d] font-normal">
+            <span className="text-[10px] text-gray-400 dark:text-[#68717d] font-normal">
               {people.length}
             </span>
           </span>
@@ -411,11 +411,11 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
                       {getInitials(person.label)}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-medium text-[#111318] dark:text-[#f4f6f8] truncate">
+                      <div className="text-xs font-medium text-[#111318] dark:text-[#f4f6f8] truncate">
                         {person.label}
                       </div>
                       {skills.length > 0 && (
-                        <div className="text-[9px] text-gray-400 dark:text-[#68717d] truncate">
+                        <div className="text-[10px] text-gray-400 dark:text-[#68717d] truncate">
                           {skills.slice(0, 2).join(' · ')}
                         </div>
                       )}
@@ -434,14 +434,14 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         <div className="flex items-center">
           <button
             onClick={() => setTeamsOpen((v) => !v)}
-            className="flex-1 flex items-center justify-between px-3 py-2 text-[11px] font-semibold
+            className="flex-1 flex items-center justify-between px-3 py-2 text-xs font-semibold
               text-[#111318] dark:text-[#f4f6f8]
               hover:bg-gray-50 dark:hover:bg-[#15191e] transition-colors"
           >
             <span className="flex items-center gap-1.5">
               <span className="w-[6px] h-[6px] rounded-full bg-[#2dd4bf]" />
               Teams
-              <span className="text-[9px] text-gray-400 dark:text-[#68717d] font-normal">
+              <span className="text-[10px] text-gray-400 dark:text-[#68717d] font-normal">
                 {teams.length}
               </span>
             </span>
@@ -471,7 +471,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
                 {!search && (
                   <button
                     onClick={() => setCreateTeamOpen(true)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors
                       bg-[#21d69a]/10 text-[#21d69a] hover:bg-[#21d69a]/20"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -494,10 +494,10 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
                     {getInitials(team.label)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-medium text-[#111318] dark:text-[#f4f6f8] truncate">
+                    <div className="text-xs font-medium text-[#111318] dark:text-[#f4f6f8] truncate">
                       {team.label}
                     </div>
-                    <div className="text-[9px] text-gray-400 dark:text-[#68717d]">
+                    <div className="text-[10px] text-gray-400 dark:text-[#68717d]">
                       {team.status ?? 'recruiting'}
                     </div>
                   </div>

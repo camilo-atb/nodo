@@ -17,10 +17,17 @@ export function drawNode(
   dimmed?: boolean,
   highlighted?: boolean,
 ): void {
-  const x = node.x ?? 0;
-  const y = node.y ?? 0;
-  const visual = getNodeVisual(node.kind);
   const time = performance.now();
+  const visual = getNodeVisual(node.kind);
+
+  // Subtle floating for skill nodes — very gentle oscillation
+  let x = node.x ?? 0;
+  let y = node.y ?? 0;
+  if (node.kind === 'skill') {
+    const phase = (time / 3000) + (x * 0.1); // unique phase per node
+    x += Math.sin(phase) * 1.2;
+    y += Math.cos(phase * 0.7) * 0.8;
+  }
 
   ctx.save();
 

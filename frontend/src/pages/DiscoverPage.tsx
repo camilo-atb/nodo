@@ -50,6 +50,24 @@ function formatDay(epochMs: number): string {
   return new Date(epochMs).getDate().toString();
 }
 
+function getTimeLabel(startsAt: number | null, endsAt: number | null): string | null {
+  const now = Date.now();
+  if (startsAt && endsAt) {
+    if (now < startsAt) {
+      const diff = startsAt - now;
+      const days = Math.floor(diff / 86400000);
+      if (days > 1) return `Starts in ${days} days`;
+      if (days === 1) return 'Starts tomorrow';
+      const hours = Math.floor(diff / 3600000);
+      if (hours > 0) return `Starts in ${hours}h`;
+      return 'Starting soon';
+    }
+    if (now >= startsAt && now <= endsAt) return 'Happening now';
+    return 'Ended';
+  }
+  return null;
+}
+
 function toggleTheme() {
   const html = document.documentElement;
   const isDark = html.classList.contains('dark');
@@ -303,21 +321,26 @@ function HackathonCard({ event }: { event: NodoEvent }) {
   return (
     <article
       onClick={() => navigate(`/event/${event.id}`)}
-      className="group cursor-pointer min-h-[350px] flex flex-col rounded-2xl border p-5 transition-all duration-200
+      className="group cursor-pointer min-h-[300px] flex flex-col rounded-2xl border p-5 transition-all duration-200
         bg-white border-gray-200 shadow-sm hover:-translate-y-1 hover:shadow-xl
         dark:bg-[#101317] dark:border-[#20262d] dark:hover:border-[#252b32]"
     >
-      {/* Top: badge */}
+      {/* Top: badge + time */}
       <div className="flex items-center justify-between mb-4">
-        <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#12c7e5]/10 text-[9px] font-extrabold tracking-[0.8px] text-[#12c7e5] uppercase">
+        <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#12c7e5]/10 text-[10px] font-extrabold tracking-[0.8px] text-[#12c7e5] uppercase">
           ✦ HACKATHON
         </span>
-        {event.participantCount > 0 && (
-          <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
-            <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
-            {event.participantCount} joined
-          </span>
-        )}
+        {(() => {
+          const timeLabel = getTimeLabel(event.startsAt, event.endsAt);
+          if (!timeLabel) return null;
+          const isLive = timeLabel === 'Happening now';
+          return (
+            <span className={`text-[10px] font-semibold ${isLive ? 'text-[#21d69a]' : 'text-gray-400 dark:text-[#68717d]'}`}>
+              {isLive && <span className="inline-block w-[5px] h-[5px] rounded-full bg-[#21d69a] mr-1.5 animate-pulse" />}
+              {timeLabel}
+            </span>
+          );
+        })()}
       </div>
 
       {/* Date block + title area */}
@@ -336,27 +359,15 @@ function HackathonCard({ event }: { event: NodoEvent }) {
           <h3 className="text-xl font-bold tracking-tight text-[#111318] dark:text-[#f4f6f8] truncate">
             {event.name}
           </h3>
-          <p className="mt-1 text-[13px] text-gray-500 dark:text-[#9da6b1] line-clamp-2">
+          <p className="mt-1.5 text-[13px] text-gray-500 dark:text-[#9da6b1] line-clamp-3">
             {event.description}
           </p>
         </div>
       </div>
 
-      {/* Metadata */}
-      <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500 dark:text-[#68717d]">
-        <span className="flex items-center gap-1">
-          <GlobeIcon />
-          Online
-        </span>
-        <span className="flex items-center gap-1">
-          <PersonIcon />
-          {event.participantCount} participants
-        </span>
-      </div>
-
       {/* Tags */}
       {event.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-4">
+        <div className="flex flex-wrap gap-1.5 mt-2">
           {event.tags.map((tag) => (
             <span
               key={tag}
@@ -370,38 +381,25 @@ function HackathonCard({ event }: { event: NodoEvent }) {
         </div>
       )}
 
-      {/* Footer */}
-      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-[#20262d] flex items-center justify-between">
-        {/* Participant info */}
-        <div className="flex items-center">
-          {event.participantCount > 0 ? (
-            <>
-              <div className="flex -space-x-1">
-                {Array.from({ length: Math.min(event.participantCount, 3) }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
-                  />
-                ))}
-              </div>
-              {event.participantCount > 3 && (
-                <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
-                  +{event.participantCount - 3} joined
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-[11px] text-gray-400 dark:text-[#68717d]">
-              Be the first to join
-            </span>
-          )}
-        </div>
+      {/* Metadata */}
+      <div className="flex items-center gap-3 mt-3 text-[11px] text-gray-500 dark:text-[#68717d]">
+        <span className="flex items-center gap-1">
+          <GlobeIcon />
+          Online
+        </span>
+        <span className="flex items-center gap-1">
+          <PersonIcon />
+          {event.participantCount} participants
+        </span>
+      </div>
 
+      {/* Footer */}
+      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-[#20262d] flex items-center justify-end">
         {/* Subscribe button */}
         <button
           onClick={handleSubscribe}
           disabled={subscribing}
-          className="h-8 px-3 rounded-lg text-[11px] font-bold transition-colors duration-200 disabled:opacity-50
+          className="h-9 px-4 rounded-lg text-xs font-bold transition-colors duration-200 disabled:opacity-50
             bg-[#12c7e5] text-[#001a20] hover:bg-[#0fb5d0]"
         >
           {subscribing ? 'Joining...' : 'Participate'}

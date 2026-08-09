@@ -64,7 +64,7 @@ export function VoteButton({ cardId, votes, myVote, teamId }: VoteButtonProps) {
         </svg>
       ) : (
         <svg
-          className="w-4 h-4 text-muted"
+          className="w-4 h-4 text-gray-400 dark:text-[#68717d]"
           viewBox="0 0 20 20"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -76,7 +76,7 @@ export function VoteButton({ cardId, votes, myVote, teamId }: VoteButtonProps) {
           />
         </svg>
       )}
-      <span className={myVote ? 'text-red font-semibold' : 'text-muted'}>
+      <span className={myVote ? 'text-red font-semibold' : 'text-gray-400 dark:text-[#68717d]'}>
         {votes}
       </span>
       {error && <span className="text-red-400" aria-label={error}>!</span>}
