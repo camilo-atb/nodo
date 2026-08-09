@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
 import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
 import { CreateEventModal } from '@/components/discover/CreateEventModal';
+import type { EventSubscriptionResponse } from '@nodo/contracts';
+import { fetchPortalToken, portal } from '@/lib/portal';
+import { useSessionStore } from '@/stores/sessionStore';
 
 // ---------------------------------------------------------------------------
 // Mock data
@@ -330,6 +333,28 @@ function FilterBar({
 
 function HackathonCard({ event }: { event: NodoEvent }) {
   const navigate = useNavigate();
+  const sessionToken = useSessionStore((s) => s.sessionToken);
+  const [subscribing, setSubscribing] = useState(false);
+
+  async function handleSubscribe(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!sessionToken) {
+      navigate(`/event/${event.id}`);
+      return;
+    }
+    setSubscribing(true);
+    try {
+      await apiFetch<EventSubscriptionResponse>(`/v1/events/${event.id}/subscription`, {
+        method: 'POST',
+      });
+      portal.setToken(fetchPortalToken);
+      navigate(`/event/${event.id}`);
+    } catch {
+      // Fallback: navigate to event page where they can retry
+      navigate(`/event/${event.id}`);
+    }
+    setSubscribing(false);
+  }
 
   return (
     <article
@@ -428,16 +453,15 @@ function HackathonCard({ event }: { event: NodoEvent }) {
           )}
         </div>
 
-        {/* Arrow button */}
-        <div
-          className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200
-            border-gray-200 text-gray-400 group-hover:bg-[#111318] group-hover:text-white group-hover:border-[#111318]
-            dark:border-[#20262d] dark:text-[#68717d] dark:group-hover:bg-white dark:group-hover:text-[#07090c] dark:group-hover:border-white"
+        {/* Subscribe button */}
+        <button
+          onClick={handleSubscribe}
+          disabled={subscribing}
+          className="h-8 px-3 rounded-lg text-[11px] font-bold transition-colors duration-200 disabled:opacity-50
+            bg-[#12c7e5] text-[#001a20] hover:bg-[#0fb5d0]"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </div>
+          {subscribing ? 'Joining...' : 'Participate'}
+        </button>
       </div>
     </article>
   );
@@ -445,6 +469,27 @@ function HackathonCard({ event }: { event: NodoEvent }) {
 
 function ProjectCard({ event }: { event: NodoEvent }) {
   const navigate = useNavigate();
+  const sessionToken = useSessionStore((s) => s.sessionToken);
+  const [subscribing, setSubscribing] = useState(false);
+
+  async function handleSubscribe(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!sessionToken) {
+      navigate(`/event/${event.id}`);
+      return;
+    }
+    setSubscribing(true);
+    try {
+      await apiFetch<EventSubscriptionResponse>(`/v1/events/${event.id}/subscription`, {
+        method: 'POST',
+      });
+      portal.setToken(fetchPortalToken);
+      navigate(`/event/${event.id}`);
+    } catch {
+      navigate(`/event/${event.id}`);
+    }
+    setSubscribing(false);
+  }
 
   return (
     <article
@@ -534,16 +579,15 @@ function ProjectCard({ event }: { event: NodoEvent }) {
           )}
         </div>
 
-        {/* Arrow button */}
-        <div
-          className="flex items-center justify-center w-8 h-8 rounded-lg border transition-colors duration-200
-            border-gray-200 text-gray-400 group-hover:bg-[#111318] group-hover:text-white group-hover:border-[#111318]
-            dark:border-[#20262d] dark:text-[#68717d] dark:group-hover:bg-white dark:group-hover:text-[#07090c] dark:group-hover:border-white"
+        {/* Subscribe button */}
+        <button
+          onClick={handleSubscribe}
+          disabled={subscribing}
+          className="h-8 px-3 rounded-lg text-[11px] font-bold transition-colors duration-200 disabled:opacity-50
+            bg-[#21d69a] text-[#00261a] hover:bg-[#1bc48b]"
         >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-            <path d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
-        </div>
+          {subscribing ? 'Joining...' : 'Contribute'}
+        </button>
       </div>
     </article>
   );

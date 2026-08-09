@@ -21,12 +21,13 @@ export function MainLayout({ eventId }: { eventId: string }) {
     showSkills: true,
   });
   const [graphSearch, setGraphSearch] = useState('');
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   return (
     <>
       <NavBar />
-      <ConnectionBanner />
       <div className="relative h-[calc(100vh-72px)]">
+        <ConnectionBanner />
         {/* Graph background */}
         <div
           className="absolute inset-0 pointer-events-none
@@ -61,11 +62,22 @@ export function MainLayout({ eventId }: { eventId: string }) {
         />
 
         {/* Explorer Panel */}
-        <ExplorerPanel filter={graphFilter} onFilterChange={setGraphFilter} search={graphSearch} onSearchChange={setGraphSearch} />
+        <ExplorerPanel
+          filter={graphFilter}
+          onFilterChange={setGraphFilter}
+          search={graphSearch}
+          onSearchChange={setGraphSearch}
+          onSelectNode={(id) => setSelectedNodeId(id)}
+        />
 
         {/* Fullscreen Graph */}
         <div className="absolute inset-0">
-          <GraphPanel filter={graphFilter} searchQuery={graphSearch} />
+          <GraphPanel
+            filter={graphFilter}
+            searchQuery={graphSearch}
+            selectedNodeId={selectedNodeId}
+            onNodeSelect={() => setSelectedNodeId(null)}
+          />
         </div>
       </div>
     </>
@@ -217,17 +229,16 @@ function NavBar() {
 
 // ─── Explorer Panel ──────────────────────────────────────────────────────────
 
-function ExplorerPanel({ filter, onFilterChange, search, onSearchChange }: {
+function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelectNode }: {
   filter: GraphFilter;
   onFilterChange: (f: GraphFilter) => void;
   search: string;
   onSearchChange: (s: string) => void;
+  onSelectNode: (nodeId: string) => void;
 }) {
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [teamsOpen, setTeamsOpen] = useState(false);
-  const navigate = useNavigate();
 
-  const currentEventId = useEventStore((s) => s.currentEventId);
   const nodesMap = useGraphStore((s) => s.nodes);
   const edgesMap = useGraphStore((s) => s.edges);
 
@@ -355,7 +366,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange }: {
                 return (
                   <button
                     key={person.id}
-                    onClick={() => currentEventId && navigate(`/event/${currentEventId}/profile/${person.id}`)}
+                    onClick={() => onSelectNode(person.id)}
                     className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left
                       hover:bg-gray-100 dark:hover:bg-[#15191e] transition-colors"
                   >
@@ -410,7 +421,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange }: {
               teams.map((team) => (
                 <button
                   key={team.id}
-                  onClick={() => currentEventId && navigate(`/event/${currentEventId}/team/${team.id}`)}
+                  onClick={() => onSelectNode(team.id)}
                   className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left
                     hover:bg-gray-100 dark:hover:bg-[#15191e] transition-colors"
                 >

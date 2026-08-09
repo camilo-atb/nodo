@@ -19,6 +19,9 @@ const CATEGORY_LABELS: Record<SkillCategory, string> = {
   other: 'Other',
 };
 
+const inputClasses =
+  'w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#12c7e5] border bg-gray-50 border-gray-200 text-[#111318] placeholder:text-gray-400 dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#f4f6f8] dark:placeholder:text-[#68717d]';
+
 export function SkillPicker({ value, onChange }: SkillPickerProps) {
   const [vocabulary, setVocabulary] = useState<SkillRef[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +94,7 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-muted text-sm">
+      <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-[#9da6b1]">
         <Spinner size="sm" />
         <span>Loading skills...</span>
       </div>
@@ -101,7 +104,7 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
   if (failed) {
     return (
       <div className="space-y-2">
-        <p className="text-xs text-muted">Skills autocomplete unavailable. Enter skills manually:</p>
+        <p className="text-xs text-gray-500 dark:text-[#9da6b1]">Skills autocomplete unavailable. Enter skills manually:</p>
         <div className="flex gap-2">
           <input
             type="text"
@@ -109,12 +112,12 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
             onChange={(e) => setFreeText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleFreeTextAdd(); } }}
             placeholder="e.g. react, typescript..."
-            className="flex-1 rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+            className={`flex-1 ${inputClasses}`}
           />
           <button
             type="button"
             onClick={handleFreeTextAdd}
-            className="px-3 py-2 text-sm rounded-lg bg-accent/20 text-accent hover:bg-accent/30 transition-colors"
+            className="px-3 py-2 text-sm rounded-lg bg-[#12c7e5]/10 text-[#12c7e5] hover:bg-[#12c7e5]/20 transition-colors"
           >
             Add
           </button>
@@ -124,13 +127,13 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
             {value.map((slug) => (
               <span
                 key={slug}
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-accent/10 text-accent border border-accent/20"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-[#12c7e5]/10 text-[#12c7e5] border border-[#12c7e5]/20"
               >
                 {slug}
                 <button
                   type="button"
                   onClick={() => removeSkill(slug)}
-                  className="ml-1 text-accent/60 hover:text-accent"
+                  className="ml-1 text-[#12c7e5]/60 hover:text-[#12c7e5]"
                   aria-label={`Remove ${slug}`}
                 >
                   ×
@@ -151,14 +154,16 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder="Search skills..."
-        className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+        className={inputClasses}
       />
 
       {open && filtered.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-lg bg-panel-2 border border-border shadow-lg">
+        <div className="absolute z-20 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border shadow-lg
+          bg-white border-gray-200
+          dark:bg-[#101317] dark:border-[#20262d]">
           {Object.entries(grouped).map(([category, skills]) => (
             <div key={category}>
-              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-2">
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-[#68717d]">
                 {CATEGORY_LABELS[category as SkillCategory] ?? category}
               </div>
               {skills.map((skill) => (
@@ -166,7 +171,9 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
                   key={skill.slug}
                   type="button"
                   onClick={() => addSkill(skill.slug)}
-                  className="w-full px-3 py-1.5 text-left text-sm text-white hover:bg-white/5 transition-colors"
+                  className="w-full px-3 py-1.5 text-left text-sm transition-colors
+                    text-[#111318] hover:bg-gray-50
+                    dark:text-[#f4f6f8] dark:hover:bg-[#15191e]"
                 >
                   {skill.label}
                 </button>
@@ -181,13 +188,13 @@ export function SkillPicker({ value, onChange }: SkillPickerProps) {
           {value.map((slug) => (
             <span
               key={slug}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-accent/10 text-accent border border-accent/20"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-[#12c7e5]/10 text-[#12c7e5] border border-[#12c7e5]/20"
             >
               {getLabel(slug)}
               <button
                 type="button"
                 onClick={() => removeSkill(slug)}
-                className="ml-1 text-accent/60 hover:text-accent"
+                className="ml-1 text-[#12c7e5]/60 hover:text-[#12c7e5]"
                 aria-label={`Remove ${getLabel(slug)}`}
               >
                 ×

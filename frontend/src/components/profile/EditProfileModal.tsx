@@ -17,6 +17,9 @@ const AVAILABILITY_OPTIONS: { value: Availability; label: string }[] = [
   { value: 'evenings', label: 'Evenings only' },
 ];
 
+const inputClasses =
+  'w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#12c7e5] border bg-gray-50 border-gray-200 text-[#111318] placeholder:text-gray-400 dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#f4f6f8] dark:placeholder:text-[#68717d]';
+
 export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
   const personId = useSessionStore((s) => s.personId);
   const profile = useSessionStore((s) => s.profile);
@@ -69,7 +72,7 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Display Name */}
         <div>
-          <label htmlFor="edit-name" className="block text-xs font-medium text-muted mb-1">
+          <label htmlFor="edit-name" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Display Name
           </label>
           <input
@@ -77,14 +80,14 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses}
             placeholder="Your name"
           />
         </div>
 
         {/* Headline */}
         <div>
-          <label htmlFor="edit-headline" className="block text-xs font-medium text-muted mb-1">
+          <label htmlFor="edit-headline" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Headline
           </label>
           <input
@@ -92,14 +95,14 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
             type="text"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses}
             placeholder="e.g. Full-stack developer"
           />
         </div>
 
         {/* Bio */}
         <div>
-          <label htmlFor="edit-bio" className="block text-xs font-medium text-muted mb-1">
+          <label htmlFor="edit-bio" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Bio
           </label>
           <textarea
@@ -107,14 +110,14 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+            className={`${inputClasses} resize-none`}
             placeholder="Tell others about yourself..."
           />
         </div>
 
         {/* Skills */}
         <div>
-          <label className="block text-xs font-medium text-muted mb-1">
+          <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Skills
           </label>
           <SkillPicker value={skills} onChange={setSkills} />
@@ -122,14 +125,14 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
 
         {/* Availability */}
         <div>
-          <label htmlFor="edit-availability" className="block text-xs font-medium text-muted mb-1">
+          <label htmlFor="edit-availability" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Availability
           </label>
           <select
             id="edit-availability"
             value={availability}
             onChange={(e) => setAvailability(e.target.value as Availability)}
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses}
           >
             {AVAILABILITY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -144,14 +147,16 @@ export function EditProfileModal({ open, onClose }: EditProfileModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm rounded-lg text-muted hover:text-white transition-colors"
+            className="px-4 py-2 text-sm rounded-lg transition-colors
+              text-gray-500 hover:text-[#111318] hover:bg-gray-100
+              dark:text-[#9da6b1] dark:hover:text-white dark:hover:bg-[#15191e]"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 text-sm font-semibold rounded-lg bg-accent text-white hover:bg-accent-2 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#12c7e5] text-[#001a20] hover:bg-[#0fb5d0] transition-colors disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save'}
           </button>

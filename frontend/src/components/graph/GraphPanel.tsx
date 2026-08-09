@@ -6,21 +6,21 @@
  * - Professional node/link rendering with pulsing halos and animated edges
  * - Hover-highlight: dims non-connected nodes/edges
  * - Tooltip overlay (React div, not canvas-drawn)
- * - Click navigation to team/profile pages
+ * - Click opens node detail modal (not navigation)
  * - Legend panel
  * - Radial gradient background for depth
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ForceGraph2D, { type ForceGraphMethods } from 'react-force-graph-2d';
-import { useNavigate } from 'react-router-dom';
 import { useGraphData } from '@/hooks/useGraphData';
 import type { ForceNode, ForceLink } from '@/hooks/useGraphData';
 import { drawNode } from './nodeRenderer';
 import { drawLink } from './linkRenderer';
-import { useEventStore } from '@/stores/eventStore';
 import type { GraphFilter } from '@/types/ui';
 import type { NodeObject, LinkObject } from 'react-force-graph-2d';
+import { useGraphStore } from '@/stores/graphStore';
+import { NodeDetailModal } from './NodeDetailModal';
 
 type GraphMethods = ForceGraphMethods<NodeObject<ForceNode>, LinkObject<ForceNode, ForceLink>>;
 
@@ -33,9 +33,11 @@ interface TooltipData {
 interface GraphPanelProps {
   filter?: GraphFilter;
   searchQuery?: string;
+  onNodeSelect?: (node: ForceNode) => void;
+  selectedNodeId?: string | null;
 }
 
-export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelProps = {}) {
+export function GraphPanel({ filter: externalFilter, searchQuery, onNodeSelect, selectedNodeId }: GraphPanelProps) {
   const [internalFilter] = useState<GraphFilter>({
     showPersons: true,
     showTeams: true,
@@ -46,21 +48,20 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
 
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
+  const [selectedNode, setSelectedNode] = useState<ForceNode | null>(null);
 
   const data = useGraphData(filter);
   const graphRef = useRef<GraphMethods | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
+  const edgesMap = useGraphStore((s) => s.edges);
+  const nodesMap = useGraphStore((s) => s.nodes);
 
   // Configure d3 forces for better node spacing
   useEffect(() => {
     const fg = graphRef.current;
     if (!fg) return;
-    // Stronger repulsion to prevent overlapping
     fg.d3Force('charge')?.strength(-500);
-    // Larger collision radius so nodes don't stack
     fg.d3Force('collide')?.radius(45);
-    // Longer link distance to spread things out
     fg.d3Force('link')?.distance(100);
   }, [data]);
 
@@ -97,33 +98,22 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
     [hoveredNode],
   );
 
-  // --- Click handler with navigation ---
+  // --- Click handler — show modal ---
   const handleNodeClick = useCallback(
     (node: ForceNode) => {
-      const eventId = useEventStore.getState().currentEventId;
-      if (!eventId) {
-        console.log('No event selected, node clicked:', node.id, node.kind);
-        return;
-      }
-
-      switch (node.kind) {
-        case 'team':
-          navigate(`/event/${eventId}/team/${node.id}`);
-          break;
-        case 'person':
-          navigate(`/event/${eventId}/profile/${node.id}`);
-          break;
-        case 'idea':
-          // Show info — no dedicated page yet. The tooltip on hover gives context.
-          // For now, keep the node highlighted (hover state persists on click)
-          setHoveredNode(node);
-          break;
-        default:
-          break;
-      }
+      setSelectedNode(node);
+      onNodeSelect?.(node);
     },
-    [navigate],
+    [onNodeSelect],
   );
+
+  // External selection (from explorer panel)
+  useEffect(() => {
+    if (selectedNodeId) {
+      const node = data.nodes.find((n) => n.id === selectedNodeId);
+      if (node) setSelectedNode(node);
+    }
+  }, [selectedNodeId, data.nodes]);
 
   // --- Hover handler ---
   const handleNodeHover = useCallback(
@@ -132,7 +122,6 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
       setHoveredNode(forceNode);
 
       if (forceNode && containerRef.current && graphRef.current) {
-        // Convert graph coords to screen coords
         const screenCoords = graphRef.current.graph2ScreenCoords(
           forceNode.x ?? 0,
           forceNode.y ?? 0,
@@ -148,6 +137,53 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
     },
     [],
   );
+
+  // Get skills for a person node
+  const getNodeSkills = useCallback((nodeId: string): string[] => {
+    const skills: string[] = [];
+    for (const [, edge] of edgesMap) {
+      if (edge.kind === 'has_skill' && edge.from === nodeId) {
+        const skillNode = nodesMap.get(edge.to);
+        if (skillNode) skills.push(skillNode.label);
+      }
+    }
+    return skills;
+  }, [edgesMap, nodesMap]);
+
+  // Get team members
+  const getTeamMembers = useCallback((teamId: string): { id: string; label: string }[] => {
+    const members: { id: string; label: string }[] = [];
+    for (const [, edge] of edgesMap) {
+      if (edge.kind === 'member_of' && edge.to === teamId) {
+        const memberNode = nodesMap.get(edge.from);
+        if (memberNode) members.push({ id: memberNode.id, label: memberNode.label });
+      }
+    }
+    return members;
+  }, [edgesMap, nodesMap]);
+
+  // Get team needs (skills)
+  const getTeamNeeds = useCallback((teamId: string): string[] => {
+    const needs: string[] = [];
+    for (const [, edge] of edgesMap) {
+      if (edge.kind === 'needs' && edge.from === teamId) {
+        const skillNode = nodesMap.get(edge.to);
+        if (skillNode) needs.push(skillNode.label);
+      }
+    }
+    return needs;
+  }, [edgesMap, nodesMap]);
+
+  // Get person's team
+  const getPersonTeam = useCallback((personId: string): { id: string; label: string } | null => {
+    for (const [, edge] of edgesMap) {
+      if (edge.kind === 'member_of' && edge.from === personId) {
+        const teamNode = nodesMap.get(edge.to);
+        if (teamNode) return { id: teamNode.id, label: teamNode.label };
+      }
+    }
+    return null;
+  }, [edgesMap, nodesMap]);
 
   // --- Custom render: node ---
   const renderNode = useCallback(
@@ -174,17 +210,8 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
 
   return (
     <div ref={containerRef} className="relative w-full h-full overflow-hidden">
-      {/* Radial gradient background for depth */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 45%, rgba(99,102,241,0.05), transparent 36%)',
-        }}
-      />
-
       {/* Tooltip overlay */}
-      {tooltip && <NodeTooltip data={tooltip} />}
+      {tooltip && !selectedNode && <NodeTooltip data={tooltip} />}
 
       {/* Force graph */}
       <ForceGraph2D
@@ -198,8 +225,7 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
           const n = node as unknown as ForceNode;
           const x = n.x ?? 0;
           const y = n.y ?? 0;
-          // Paint a larger invisible circle for hover/click detection
-          const hitRadius = n.kind === 'team' ? 30 : n.kind === 'idea' ? 25 : n.kind === 'agent' ? 25 : n.kind === 'person' ? 20 : 10;
+          const hitRadius = n.kind === 'team' ? 30 : n.kind === 'person' ? 20 : 10;
           ctx.fillStyle = color;
           ctx.beginPath();
           ctx.arc(x, y, hitRadius, 0, 2 * Math.PI);
@@ -216,6 +242,16 @@ export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelPr
         d3VelocityDecay={0.3}
         d3AlphaDecay={0.01}
         dagMode={undefined}
+      />
+
+      {/* Node Detail Modal */}
+      <NodeDetailModal
+        node={selectedNode}
+        onClose={() => setSelectedNode(null)}
+        skills={selectedNode ? getNodeSkills(selectedNode.id) : []}
+        members={selectedNode?.kind === 'team' ? getTeamMembers(selectedNode.id) : []}
+        needs={selectedNode?.kind === 'team' ? getTeamNeeds(selectedNode.id) : []}
+        team={selectedNode?.kind === 'person' ? getPersonTeam(selectedNode.id) : null}
       />
     </div>
   );
@@ -235,27 +271,27 @@ function NodeTooltip({ data }: { data: TooltipData }) {
 
   return (
     <div
-      className="absolute z-50 pointer-events-none px-3 py-2 rounded-lg border border-border bg-panel/95 backdrop-blur-sm shadow-xl"
+      className="absolute z-50 pointer-events-none px-3 py-2 rounded-lg border
+        border-gray-200 bg-white/95 shadow-lg
+        dark:border-[#20262d] dark:bg-[#101317]/95 dark:backdrop-blur-sm dark:shadow-xl"
       style={{
         left: x,
         top: y - 12,
         transform: 'translate(-50%, -100%)',
       }}
     >
-      <div className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-white/50">
         {kindLabel}
       </div>
-      <div className="text-sm font-medium text-white/90 mt-0.5">
+      <div className="text-sm font-medium mt-0.5 text-[#111318] dark:text-white/90">
         {node.label}
       </div>
       {node.status && (
-        <div className="text-xs text-white/50 mt-0.5">{node.status}</div>
+        <div className="text-xs mt-0.5 text-gray-500 dark:text-white/50">{node.status}</div>
       )}
       {actionHint && (
-        <div className="text-[10px] text-cyan-400/80 mt-1">{actionHint}</div>
+        <div className="text-[10px] text-[#12c7e5] mt-1">{actionHint}</div>
       )}
     </div>
   );
 }
-
-

@@ -22,28 +22,28 @@ export function ConnectionBanner() {
   switch (connectionStatus) {
     case 'idle':
     case 'connecting':
-      bgClass = 'bg-panel-2 border-border';
-      textContent = 'Connecting...';
+      bgClass = 'bg-white/95 border-gray-200 dark:bg-[#101317]/95 dark:border-[#20262d]';
+      textContent = <span className="text-gray-600 dark:text-[#9da6b1]">Connecting...</span>;
       showSpinner = true;
       break;
     case 'reconnecting':
-      bgClass = 'bg-amber/10 border-amber/30';
-      textContent = <span className="text-amber">Reconnecting...</span>;
+      bgClass = 'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/30';
+      textContent = <span className="text-amber-600 dark:text-amber-400">Reconnecting...</span>;
       showSpinner = true;
       break;
     case 'degraded':
     case 'degraded-http':
-      bgClass = 'bg-amber/10 border-amber/30';
-      textContent = <span className="text-amber">Connection unstable</span>;
+      bgClass = 'bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/30';
+      textContent = <span className="text-amber-600 dark:text-amber-400">Connection unstable</span>;
       showClose = true;
       break;
     case 'blocked':
-      bgClass = 'bg-red/10 border-red/30';
+      bgClass = 'bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/30';
       textContent = (
         <span className="flex items-center gap-2">
-          <span className="text-red">Connection failed</span>
+          <span className="text-red-600 dark:text-red-400">Connection failed</span>
           <button
-            className="text-[11px] px-2 py-0.5 rounded bg-red/20 text-red hover:bg-red/30 transition-colors"
+            className="text-[11px] px-2 py-0.5 rounded bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-500/20 dark:text-red-400 dark:hover:bg-red-500/30 transition-colors"
             onClick={() => {
               // TODO: actual retry logic
             }}
@@ -57,14 +57,14 @@ export function ConnectionBanner() {
 
   return (
     <div
-      className={`fixed top-14 left-0 right-0 z-40 flex items-center justify-center gap-2 px-4 py-2 text-xs border-b transition-all duration-300 ease-out ${bgClass}`}
+      className={`absolute top-0 left-0 right-0 z-30 flex items-center justify-center gap-2 px-4 py-2 text-xs border-b backdrop-blur-sm transition-all duration-300 ease-out ${bgClass}`}
     >
       {showSpinner && <Spinner size="sm" />}
       {textContent}
       {showClose && (
         <button
           onClick={() => setDismissed(true)}
-          className="absolute right-3 text-muted hover:text-white transition-colors"
+          className="absolute right-3 text-gray-400 hover:text-gray-700 dark:text-[#68717d] dark:hover:text-white transition-colors"
           aria-label="Dismiss"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
