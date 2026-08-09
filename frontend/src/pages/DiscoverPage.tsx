@@ -146,9 +146,11 @@ function PersonIcon() {
 
 function Header({
   onCreateClick,
+  onLogout,
   isDark,
 }: {
   onCreateClick: () => void;
+  onLogout: () => void;
   isDark: boolean;
 }) {
   return (
@@ -184,6 +186,19 @@ function Header({
           className="h-10 px-4 rounded-xl bg-[#12c7e5] text-[#001a20] text-sm font-bold transition-colors duration-200 hover:bg-[#0fb8d4]"
         >
           Create
+        </button>
+
+        {/* Logout */}
+        <button
+          onClick={onLogout}
+          aria-label="Logout"
+          className="flex items-center justify-center w-10 h-10 rounded-xl border transition-colors duration-200
+            bg-white border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200
+            dark:bg-[#101317] dark:border-[#20262d] dark:text-[#9da6b1] dark:hover:text-red-400 dark:hover:border-red-500/30"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
         </button>
       </div>
     </header>
@@ -421,6 +436,14 @@ export function DiscoverPage() {
     loadEvents();
   }, [setEvents]);
 
+  const navigate = useNavigate();
+  const clearSession = useSessionStore((s) => s.clearSession);
+
+  function handleLogout() {
+    clearSession();
+    navigate('/');
+  }
+
   const filtered = events.filter((e) => {
     const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
     return matchesSearch && e.kind === 'hackathon';
@@ -428,7 +451,7 @@ export function DiscoverPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-[#111318] dark:bg-[#07090c] dark:text-[#f4f6f8]">
-      <Header onCreateClick={() => setShowCreateModal(true)} isDark={isDark} />
+      <Header onCreateClick={() => setShowCreateModal(true)} onLogout={handleLogout} isDark={isDark} />
 
       <main className="mx-auto w-[calc(100%-28px)] max-w-[1120px] md:w-[calc(100%-40px)] pt-12 md:pt-[72px] pb-24">
         <Hero />
