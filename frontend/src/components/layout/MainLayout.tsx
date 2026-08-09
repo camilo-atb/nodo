@@ -269,6 +269,12 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
   const nodesMap = useGraphStore((s) => s.nodes);
   const edgesMap = useGraphStore((s) => s.edges);
 
+  // Mode detection
+  const currentEventId = useEventStore((s) => s.currentEventId);
+  const events = useEventStore((s) => s.events);
+  const currentEvent = events.find((e) => e.id === currentEventId);
+  const isProject = currentEvent?.kind === 'project';
+
   const people = useMemo(() => {
     const result: GraphNode[] = [];
     for (const [, node] of nodesMap) {
@@ -312,8 +318,8 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         </span>
       </div>
 
-      {/* Filter buttons (People / Teams / Skills) — toggle graph visibility */}
-      <div className="grid grid-cols-3 gap-1 p-1.5 border-b border-gray-100 dark:border-[#202832]">
+      {/* Filter buttons — toggle graph visibility */}
+      <div className={`grid gap-1 p-1.5 border-b border-gray-100 dark:border-[#202832] ${isProject ? 'grid-cols-2' : 'grid-cols-3'}`}>
         <button
           onClick={() => onFilterChange({ ...filter, showPersons: !filter.showPersons })}
           className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
@@ -322,8 +328,9 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
               : 'text-gray-400 dark:text-[#68717d] hover:bg-gray-100 dark:hover:bg-[#15191e]'
             }`}
         >
-          People
+          {isProject ? 'Contributors' : 'People'}
         </button>
+        {!isProject && (
         <button
           onClick={() => onFilterChange({ ...filter, showTeams: !filter.showTeams })}
           className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
@@ -334,6 +341,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         >
           Teams
         </button>
+        )}
         <button
           onClick={() => onFilterChange({ ...filter, showSkills: !filter.showSkills })}
           className={`rounded-lg px-2 py-1.5 text-[10px] font-semibold transition-colors
@@ -373,7 +381,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         >
           <span className="flex items-center gap-1.5">
             <span className="w-[6px] h-[6px] rounded-full bg-[#6d7aa3]" />
-            People
+            {isProject ? 'Contributors' : 'People'}
             <span className="text-[9px] text-gray-400 dark:text-[#68717d] font-normal">
               {people.length}
             </span>
@@ -420,7 +428,8 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
         )}
       </div>
 
-      {/* Teams drawer */}
+      {/* Teams drawer (hackathon only — in projects there's only one team = the project) */}
+      {!isProject && (<>
       <div className="border-t border-gray-100 dark:border-[#202832]">
         <div className="flex items-center">
           <button
@@ -500,6 +509,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
       </div>
 
       <CreateTeamModal open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
+      </>)}
     </div>
   );
 }

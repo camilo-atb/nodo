@@ -7,7 +7,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
 import { useTeamStore } from '@/stores/teamStore';
-import { useEventStore } from '@/stores/eventStore';
+import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { usePresenceStore } from '@/stores/presenceStore';
 import { useGraphStore } from '@/stores/graphStore';
@@ -24,8 +24,28 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
   const setMyTeamId = useTeamStore((s) => s.setMyTeamId);
   const personId = useSessionStore((s) => s.personId);
   const currentEventId = useEventStore((s) => s.currentEventId);
+  const events = useEventStore((s) => s.events);
   const onlineIds = usePresenceStore((s) => s.online);
   const edgesMap = useGraphStore((s) => s.edges);
+
+  // Derive experience mode
+  const currentEvent = events.find((e) => e.id === currentEventId);
+  const mode = currentEvent ? getExperienceMode(currentEvent.kind) : 'competition';
+  const isProject = mode === 'collaboration';
+
+  // Labels based on mode
+  const labels = {
+    panelTitle: isProject ? 'Current project' : 'Current team',
+    membersTitle: isProject ? 'Contributors' : 'Members',
+    leaderBadge: isProject ? 'OWNER' : 'LEADER',
+    roleBadge: isProject ? 'CONTRIBUTOR' : 'MEMBER',
+    yourRole: isProject ? 'Your role' : 'Your role',
+    boardAction: isProject ? 'Roadmap Board' : 'Open Board',
+    challengeAction: isProject ? 'Skill Check' : 'Launch Challenge',
+    challengeNote: isProject ? 'Owner only' : 'Leader only',
+    noTeam: isProject ? 'No project yet' : 'No team yet',
+    noTeamHint: isProject ? 'Join a project to access this panel.' : 'Join or create a team to access this panel.',
+  };
 
   // Derive teamId from graph if not in store
   const myTeamId = useMemo(() => {
@@ -124,8 +144,8 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
             <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-[#151b22] flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
-            <p className="text-sm font-semibold text-[#111318] dark:text-[#f4f6f8]">No team yet</p>
-            <p className="text-xs text-gray-500 dark:text-[#9da6b1] mt-1">Join or create a team to access this panel.</p>
+            <p className="text-sm font-semibold text-[#111318] dark:text-[#f4f6f8]">{labels.noTeam}</p>
+            <p className="text-xs text-gray-500 dark:text-[#9da6b1] mt-1">{labels.noTeamHint}</p>
           </div>
         </aside>
       </>
@@ -149,7 +169,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
         {/* Header */}
         <div className="shrink-0 border-b border-gray-200 dark:border-[#202832] px-5 pb-4 pt-5">
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-[.14em] text-gray-400 dark:text-[#68717d]">Current team</span>
+            <span className="text-[10px] font-bold uppercase tracking-[.14em] text-gray-400 dark:text-[#68717d]">{labels.panelTitle}</span>
             <button onClick={onClose} className="h-8 w-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 dark:hover:bg-[#151b22] transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
@@ -171,7 +191,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                 <div className="mt-2.5 flex items-center gap-2">
                   <span className="text-[10px] text-gray-400">Your role</span>
                   <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${isLeader ? 'bg-[#8b5cf6]/10 text-[#a78bfa]' : 'bg-[#12c7e5]/[.08] text-[#12c7e5]'}`}>
-                    {isLeader ? 'LEADER' : 'MEMBER'}
+                    {isLeader ? labels.leaderBadge : labels.roleBadge}
                   </span>
                 </div>
               </div>
@@ -186,8 +206,8 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
             <section className="border-b border-gray-200 dark:border-[#202832] px-5 py-5">
               <div className="mb-3.5 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Members</h2>
-                  <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">{team.members.length} / {team.maxSize} people</p>
+                  <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">{labels.membersTitle}</h2>
+                  <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">{team.members.length} / {team.maxSize} {isProject ? 'contributors' : 'people'}</p>
                 </div>
                 {onlineCount > 0 && (
                   <span className="flex items-center gap-1 text-[9px] text-[#21d69a]">
@@ -215,7 +235,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="truncate text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">{member.displayName}</span>
-                          {isMemberLeader && <span className="rounded-[5px] bg-[#8b5cf6]/10 px-1.5 py-0.5 text-[8px] font-bold text-[#a78bfa]">LEADER</span>}
+                          {isMemberLeader && <span className="rounded-[5px] bg-[#8b5cf6]/10 px-1.5 py-0.5 text-[8px] font-bold text-[#a78bfa]">{labels.leaderBadge}</span>}
                         </div>
                       </div>
                       <span className={`text-[9px] ${isOnline ? 'text-[#21d69a]' : 'text-gray-400'}`}>{isOnline ? 'Online' : 'Offline'}</span>
@@ -246,7 +266,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#12c7e5]/[.08] text-[#12c7e5] text-base">▤</span>
                 <span className="mt-3 flex justify-between text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">
-                  Open Board <span className="text-gray-400">→</span>
+                  {labels.boardAction} <span className="text-gray-400">→</span>
                 </span>
               </button>
 
@@ -259,9 +279,9 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#8b5cf6]/[.09] text-[#a78bfa] text-base">ϟ</span>
                   <span className="mt-3 flex justify-between text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">
-                    Launch Challenge <span className="text-gray-400">→</span>
+                    {labels.challengeAction} <span className="text-gray-400">→</span>
                   </span>
-                  <span className="block text-[8px] text-gray-400 mt-0.5">Leader only</span>
+                  <span className="block text-[8px] text-gray-400 mt-0.5">{labels.challengeNote}</span>
                 </button>
               )}
             </div>
@@ -275,7 +295,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
                   <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Pending requests</h2>
                   <span className="rounded-full bg-amber-500/10 px-1.5 text-[8px] font-bold text-amber-500">{applications.length}</span>
                 </div>
-                <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Visible to team leaders</p>
+                <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Visible to {isProject ? 'owners' : 'team leaders'}</p>
               </div>
               <div className="space-y-2">
                 {applications.map((app) => (
@@ -310,7 +330,7 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
         {/* Footer */}
         <div className="shrink-0 border-t border-gray-200 dark:border-[#202832] p-4">
           <div className="text-[10px] text-center text-gray-400 dark:text-[#68717d]">
-            {team?.members.length ?? 0} / {team?.maxSize ?? 4} members
+            {team?.members.length ?? 0} / {team?.maxSize ?? 4} {isProject ? 'contributors' : 'members'}
           </div>
         </div>
       </aside>
