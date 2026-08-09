@@ -11,7 +11,9 @@ import { TeamPanel } from '@/components/team/TeamPanel';
 import { Avatar } from '@/components/base/Avatar';
 import { apiFetch } from '@/lib/api';
 import { usePortalChannel } from '@/hooks/usePortalChannel';
+import { useTeamChannel } from '@/hooks/useTeamChannel';
 import { useEventStore, type NodoEvent } from '@/stores/eventStore';
+import { useTeamStore } from '@/stores/teamStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { usePresenceStore } from '@/stores/presenceStore';
 import { useGraphStore } from '@/stores/graphStore';
@@ -19,6 +21,8 @@ import type { GraphNode } from '@nodo/contracts';
 
 export function MainLayout({ eventId }: { eventId: string }) {
   usePortalChannel(eventId);
+  const myTeamId = useTeamStore((s) => s.myTeamId);
+  useTeamChannel(myTeamId);
   const [graphFilter, setGraphFilter] = useState<GraphFilter>({
     showPersons: true,
     showTeams: true,

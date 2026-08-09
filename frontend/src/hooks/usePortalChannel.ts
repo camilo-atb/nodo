@@ -56,7 +56,6 @@ export function usePortalChannel(eventId: string) {
     history: 50,
     onMessage: (msg) => {
       const lastSeq = useGraphStore.getState().lastSeq;
-      // msg is Message<MainEventContent> — seq lives on msg directly
       const seq = (msg as unknown as { seq?: number | null }).seq;
 
       // Ephemeral messages (seq: null) — skip
@@ -65,14 +64,12 @@ export function usePortalChannel(eventId: string) {
       // Duplicate — ignore
       if (seq <= lastSeq) return;
 
-      // Hueco detectado — el backfill de 50 no alcanza, se re-pide el snapshot
+      // Gap detected — refetch snapshot AND apply this message
       if (seq > lastSeq + 1) {
         void refetchSnapshot(eventId);
-        return;
       }
 
-      // Normal: seq === lastSeq + 1
-      // msg.content is our MainEventContent
+      // Always apply the patch if we have content (even during gap recovery)
       const content = (msg as unknown as { content?: MainEventContent }).content;
       if (!content) return;
 
