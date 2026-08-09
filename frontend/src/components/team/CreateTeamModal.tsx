@@ -5,17 +5,15 @@ import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 import { Modal } from '@/components/base/Modal';
 import { Button } from '@/components/base/Button';
 import { SkillPicker } from '@/components/profile/SkillPicker';
-import type { TeamDTO, NeedPriority } from '@nodo/contracts';
+import type { TeamDTO } from '@nodo/contracts';
 
 interface CreateTeamModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-interface NeedEntry {
-  slug: string;
-  priority: NeedPriority;
-}
+const inputClasses =
+  'w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#12c7e5] border bg-gray-50 border-gray-200 text-[#111318] placeholder:text-gray-400 dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#f4f6f8] dark:placeholder:text-[#68717d]';
 
 export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
   const setMyTeamId = useTeamStore((s) => s.setMyTeamId);
@@ -26,31 +24,9 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
 
   const [name, setName] = useState('');
   const [pitch, setPitch] = useState('');
-  const [needs, setNeeds] = useState<NeedEntry[]>([]);
+  const [skills, setSkills] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Skill slugs derived from needs
-  const selectedSlugs = needs.map((n) => n.slug);
-
-  function handleSkillsChange(slugs: string[]) {
-    // Add new ones, remove deleted ones
-    const updated: NeedEntry[] = slugs.map((slug) => {
-      const existing = needs.find((n) => n.slug === slug);
-      return existing ?? { slug, priority: 'required' as NeedPriority };
-    });
-    setNeeds(updated);
-  }
-
-  function togglePriority(slug: string) {
-    setNeeds((prev) =>
-      prev.map((n) =>
-        n.slug === slug
-          ? { ...n, priority: n.priority === 'required' ? 'nice' : 'required' }
-          : n,
-      ),
-    );
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,21 +35,23 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
     setSubmitting(true);
     setError(null);
 
+    const eventId = currentEvent?.id;
+
     try {
       const res = await apiFetch<{ team: TeamDTO }>('/v1/teams', {
         method: 'POST',
         body: JSON.stringify({
           name: name.trim(),
           pitch: pitch.trim() || null,
-          needs: needs.map(({ slug, priority }) => ({ slug, priority })),
+          needs: skills.map((slug) => ({ slug, priority: 'required' })),
+          ...(eventId && { eventId }),
         }),
       });
       setMyTeamId(res.team.id);
       onClose();
-      // Reset form
       setName('');
       setPitch('');
-      setNeeds([]);
+      setSkills([]);
     } catch {
       setError('Failed to create team. Please try again.');
     } finally {
@@ -86,7 +64,7 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Name */}
         <div>
-          <label htmlFor="team-name" className="block text-xs text-muted mb-1">
+          <label htmlFor="team-name" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             {entityLabel} Name *
           </label>
           <input
@@ -96,13 +74,13 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
             onChange={(e) => setName(e.target.value)}
             placeholder={`My awesome ${entityLabel.toLowerCase()}...`}
             required
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent"
+            className={inputClasses}
           />
         </div>
 
         {/* Pitch */}
         <div>
-          <label htmlFor="team-pitch" className="block text-xs text-muted mb-1">
+          <label htmlFor="team-pitch" className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Pitch
           </label>
           <textarea
@@ -111,43 +89,19 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
             onChange={(e) => setPitch(e.target.value)}
             placeholder="What are you building? Why should people join?"
             rows={3}
-            className="w-full rounded-lg bg-panel-2 border border-border px-3 py-2 text-sm text-white placeholder:text-muted-2 focus:outline-none focus:ring-1 focus:ring-accent resize-none"
+            className={`${inputClasses} resize-none`}
           />
         </div>
 
-        {/* Needs */}
+        {/* Skills needed */}
         <div>
-          <label className="block text-xs text-muted mb-1">
+          <label className="block text-xs font-medium mb-1 text-gray-500 dark:text-[#9da6b1]">
             Skills Needed
           </label>
-          <SkillPicker value={selectedSlugs} onChange={handleSkillsChange} />
-
-          {needs.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {needs.map((need) => (
-                <div
-                  key={need.slug}
-                  className="flex items-center justify-between px-2 py-1 rounded bg-panel-2 border border-border"
-                >
-                  <span className="text-xs text-white">{need.slug}</span>
-                  <button
-                    type="button"
-                    onClick={() => togglePriority(need.slug)}
-                    className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                      need.priority === 'required'
-                        ? 'bg-accent/10 text-accent border border-accent/20'
-                        : 'bg-white/5 text-muted border border-border'
-                    }`}
-                  >
-                    {need.priority}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <SkillPicker value={skills} onChange={setSkills} />
         </div>
 
-        {error && <p className="text-xs text-red">{error}</p>}
+        {error && <p className="text-xs text-red-500 dark:text-red-400">{error}</p>}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" type="button" onClick={onClose}>

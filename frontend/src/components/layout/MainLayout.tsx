@@ -5,9 +5,11 @@ import { ConnectionBanner } from '@/components/layout/ConnectionBanner';
 import type { GraphFilter } from '@/types/ui';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { CreateTeamModal } from '@/components/team/CreateTeamModal';
 import { Avatar } from '@/components/base/Avatar';
+import { apiFetch } from '@/lib/api';
 import { usePortalChannel } from '@/hooks/usePortalChannel';
-import { useEventStore } from '@/stores/eventStore';
+import { useEventStore, type NodoEvent } from '@/stores/eventStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { usePresenceStore } from '@/stores/presenceStore';
 import { useGraphStore } from '@/stores/graphStore';
@@ -25,7 +27,7 @@ export function MainLayout({ eventId }: { eventId: string }) {
 
   return (
     <>
-      <NavBar />
+      <NavBar eventId={eventId} />
       <div className="relative h-[calc(100vh-72px)]">
         <ConnectionBanner />
         {/* Graph background */}
@@ -86,7 +88,7 @@ export function MainLayout({ eventId }: { eventId: string }) {
 
 // ─── Nav Bar ─────────────────────────────────────────────────────────────────
 
-function NavBar() {
+function NavBar({ eventId }: { eventId: string }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -94,6 +96,7 @@ function NavBar() {
 
   const currentEventId = useEventStore((s) => s.currentEventId);
   const events = useEventStore((s) => s.events);
+  const addEvent = useEventStore((s) => s.addEvent);
   const profile = useSessionStore((s) => s.profile);
   const clearSession = useSessionStore((s) => s.clearSession);
   const onlineCount = usePresenceStore((s) => s.count);
@@ -104,10 +107,26 @@ function NavBar() {
   const name = profile?.name ?? personNode?.label ?? 'User';
 
   const eventName = useMemo(() => {
-    if (!currentEventId) return 'Event';
-    const ev = events.find((e) => e.id === currentEventId);
+    const id = currentEventId ?? eventId;
+    if (!id) return 'Event';
+    const ev = events.find((e) => e.id === id);
     return ev?.name ?? 'Event';
-  }, [currentEventId, events]);
+  }, [currentEventId, eventId, events]);
+
+  // If event name is not available (reload), fetch it
+  useEffect(() => {
+    if (eventName !== 'Event') return;
+    if (!eventId) return;
+    let cancelled = false;
+    apiFetch<NodoEvent>(`/v1/events/${eventId}`)
+      .then((ev) => {
+        if (!cancelled && ev?.name) {
+          addEvent(ev);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [eventId, eventName, addEvent]);
 
   // Click-outside for dropdown
   useEffect(() => {
@@ -238,6 +257,7 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
 }) {
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [teamsOpen, setTeamsOpen] = useState(false);
+  const [createTeamOpen, setCreateTeamOpen] = useState(false);
 
   const nodesMap = useGraphStore((s) => s.nodes);
   const edgesMap = useGraphStore((s) => s.edges);
@@ -395,27 +415,55 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
 
       {/* Teams drawer */}
       <div className="border-t border-gray-100 dark:border-[#202832]">
-        <button
-          onClick={() => setTeamsOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-[11px] font-semibold
-            text-[#111318] dark:text-[#f4f6f8]
-            hover:bg-gray-50 dark:hover:bg-[#15191e] transition-colors"
-        >
-          <span className="flex items-center gap-1.5">
-            <span className="w-[6px] h-[6px] rounded-full bg-[#2dd4bf]" />
-            Teams
-            <span className="text-[9px] text-gray-400 dark:text-[#68717d] font-normal">
-              {teams.length}
+        <div className="flex items-center">
+          <button
+            onClick={() => setTeamsOpen((v) => !v)}
+            className="flex-1 flex items-center justify-between px-3 py-2 text-[11px] font-semibold
+              text-[#111318] dark:text-[#f4f6f8]
+              hover:bg-gray-50 dark:hover:bg-[#15191e] transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <span className="w-[6px] h-[6px] rounded-full bg-[#2dd4bf]" />
+              Teams
+              <span className="text-[9px] text-gray-400 dark:text-[#68717d] font-normal">
+                {teams.length}
+              </span>
             </span>
-          </span>
-          <ChevronIcon open={teamsOpen} />
-        </button>
+            <ChevronIcon open={teamsOpen} />
+          </button>
+          <button
+            onClick={() => setCreateTeamOpen(true)}
+            className="flex items-center justify-center w-6 h-6 mr-2 rounded-md
+              text-gray-400 hover:text-[#21d69a] hover:bg-[#21d69a]/10
+              dark:text-[#68717d] dark:hover:text-[#21d69a] dark:hover:bg-[#21d69a]/10 transition-colors"
+            aria-label="Create team"
+            title="Create team"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
 
         {teamsOpen && (
           <div className="max-h-[280px] overflow-y-auto px-1.5 pb-2 border-t border-gray-50 dark:border-[#202832]">
             {teams.length === 0 ? (
-              <div className="px-2 py-3 text-[10px] text-gray-400 dark:text-[#68717d] text-center">
-                {search ? 'No matches' : 'No teams yet'}
+              <div className="px-2 py-3 text-center">
+                <p className="text-[10px] text-gray-400 dark:text-[#68717d] mb-2">
+                  {search ? 'No matches' : 'No teams yet'}
+                </p>
+                {!search && (
+                  <button
+                    onClick={() => setCreateTeamOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-colors
+                      bg-[#21d69a]/10 text-[#21d69a] hover:bg-[#21d69a]/20"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
+                    </svg>
+                    Create a team
+                  </button>
+                )}
               </div>
             ) : (
               teams.map((team) => (
@@ -443,6 +491,8 @@ function ExplorerPanel({ filter, onFilterChange, search, onSearchChange, onSelec
           </div>
         )}
       </div>
+
+      <CreateTeamModal open={createTeamOpen} onClose={() => setCreateTeamOpen(false)} />
     </div>
   );
 }
