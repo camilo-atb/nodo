@@ -311,23 +311,13 @@ function getInitials(name: string): string {
 
 function InlineApplyButton({ teamId, teamName, members }: { teamId: string; teamName: string; members: { id: string; label: string }[] }) {
   const personId = useSessionStore((s) => s.personId);
-  const myTeamId = useTeamStore((s) => s.myTeamId);
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'already'>('idle');
   const [message, setMessage] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  // Don't show if user is the leader or a member
+  // Don't show if user is already a member of THIS team
   const isMember = members.some((m) => m.id === personId);
-  if (isMember || myTeamId === teamId) return null;
-
-  // If user already has a team, don't show apply
-  if (myTeamId) {
-    return (
-      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#20262d]">
-        <p className="text-[10px] text-gray-400 dark:text-[#68717d] text-center">You're already in a team</p>
-      </div>
-    );
-  }
+  if (isMember) return null;
 
   async function handleApply() {
     setStatus('sending');
