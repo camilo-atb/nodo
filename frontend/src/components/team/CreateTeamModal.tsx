@@ -5,7 +5,8 @@ import { useEventStore, getExperienceMode } from '@/stores/eventStore';
 import { Modal } from '@/components/base/Modal';
 import { Button } from '@/components/base/Button';
 import { SkillPicker } from '@/components/profile/SkillPicker';
-import type { TeamDTO } from '@nodo/contracts';
+import { useGraphStore } from '@/stores/graphStore';
+import type { TeamDTO, GraphSnapshot } from '@nodo/contracts';
 
 interface CreateTeamModalProps {
   open: boolean;
@@ -48,6 +49,15 @@ export function CreateTeamModal({ open, onClose }: CreateTeamModalProps) {
         }),
       });
       setMyTeamId(res.team.id);
+
+      // Optimistic: refetch graph snapshot so new team appears immediately
+      // even if Portal realtime delivery is delayed
+      if (eventId) {
+        apiFetch<GraphSnapshot>(`/v1/graph?eventId=${encodeURIComponent(eventId)}`)
+          .then((snapshot) => useGraphStore.getState().loadSnapshot(snapshot))
+          .catch(() => {});
+      }
+
       onClose();
       setName('');
       setPitch('');

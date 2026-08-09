@@ -6,6 +6,7 @@ import type { GraphFilter } from '@/types/ui';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
 import { CreateTeamModal } from '@/components/team/CreateTeamModal';
+import { TeamPanel } from '@/components/team/TeamPanel';
 import { Avatar } from '@/components/base/Avatar';
 import { apiFetch } from '@/lib/api';
 import { usePortalChannel } from '@/hooks/usePortalChannel';
@@ -92,6 +93,7 @@ function NavBar({ eventId }: { eventId: string }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [teamPanelOpen, setTeamPanelOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentEventId = useEventStore((s) => s.currentEventId);
@@ -192,11 +194,11 @@ function NavBar({ eventId }: { eventId: string }) {
             </button>
             <div className="w-px h-5 bg-gray-200 dark:bg-[#202832]" />
             <div className="flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#15191e] transition-colors">
-              <NotificationBell unseenCount={0} />
+              <NotificationBell />
             </div>
             <div className="w-px h-5 bg-gray-200 dark:bg-[#202832]" />
             <button
-              onClick={() => console.log('[Nodo] Team button')}
+              onClick={() => setTeamPanelOpen(true)}
               aria-label="My team"
               className="flex items-center justify-center w-9 h-9 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-[#15191e] transition-colors"
             >
@@ -242,6 +244,7 @@ function NavBar({ eventId }: { eventId: string }) {
       </header>
 
       <EditProfileModal open={editProfileOpen} onClose={() => setEditProfileOpen(false)} />
+      <TeamPanel open={teamPanelOpen} onClose={() => setTeamPanelOpen(false)} />
     </>
   );
 }

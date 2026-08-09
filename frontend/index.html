@@ -1,10 +1,21 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nodo — Realtime Talent Network</title>
+    <script>
+      // Restore theme preference before paint to prevent flash
+      (function() {
+        var theme = localStorage.getItem('nodo-theme');
+        if (theme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-[#f7f8fa] text-[#111318] antialiased transition-colors dark:bg-[#07090c] dark:text-[#f4f6f8]">
     <div id="root"></div>

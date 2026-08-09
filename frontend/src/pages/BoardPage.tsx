@@ -120,10 +120,10 @@ export function BoardPage() {
       {/* Back button */}
       <div className="px-4 py-2 border-b border-border flex items-center">
         <button
-          onClick={() => navigate(`/event/${eventId}/team/${teamId}`)}
+          onClick={() => navigate(`/event/${eventId}`)}
           className="text-xs text-muted hover:text-white transition-colors flex items-center gap-1"
         >
-          ← Back to Team
+          ← Back to Graph
         </button>
       </div>
       <BoardToolbar

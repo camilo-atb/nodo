@@ -101,22 +101,22 @@ export function drawNode(
     node.kind !== 'skill' || globalScale > 2.5;
 
   if (shouldShowLabel && globalScale > 0.5) {
-    const fontSize = Math.max(11 / globalScale, 3.5);
-    ctx.font = `500 ${fontSize}px Inter, system-ui, sans-serif`;
+    const fontSize = Math.max(13 / globalScale, 4.5);
+    ctx.font = `600 ${fontSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
 
-    const labelY = y + visual.radius + 3;
+    const labelY = y + visual.radius + 4;
     const isDark = document.documentElement.classList.contains('dark');
 
     // Background stroke for contrast (adapts to theme)
     ctx.strokeStyle = isDark ? 'rgba(7, 8, 13, 0.95)' : 'rgba(255, 255, 255, 0.95)';
-    ctx.lineWidth = 3.5 / globalScale;
+    ctx.lineWidth = 4 / globalScale;
     ctx.lineJoin = 'round';
     ctx.strokeText(node.label, x, labelY);
 
     // Text fill (adapts to theme)
-    ctx.fillStyle = isDark ? 'rgba(240, 240, 255, 0.92)' : 'rgba(17, 19, 24, 0.9)';
+    ctx.fillStyle = isDark ? 'rgba(240, 240, 255, 0.95)' : 'rgba(17, 19, 24, 0.92)';
     ctx.fillText(node.label, x, labelY);
   }
 
