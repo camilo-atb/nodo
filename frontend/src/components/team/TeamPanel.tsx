@@ -49,7 +49,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
 
   const [team, setTeam] = useState<TeamDTO | null>(null);
   const [applications, setApplications] = useState<ApplicationDTO[]>([]);
-  const [challenges, setChallenges] = useState<{ id: string; title: string; status: string; skillSlug: string }[]>([]);
   const [_loading, setLoading] = useState(false);
   const [launchModalOpen, setLaunchModalOpen] = useState(false);
 
@@ -65,15 +64,9 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
     Promise.all([
       apiFetch<{ team: TeamDTO }>(`/v1/teams/${myTeamId}`).catch(() => null),
       apiFetch<{ applications: ApplicationDTO[] }>(`/v1/teams/${myTeamId}/applications`).catch(() => ({ applications: [] as ApplicationDTO[] })),
-      apiFetch<{ challenges: { id: string; title: string; status: string; skillSlug: string }[] }>(`/v1/teams/${myTeamId}/challenges`).catch(() => null),
-    ]).then(([teamRes, appsRes, challengesRes]) => {
+    ]).then(([teamRes, appsRes]) => {
       if (teamRes) setTeam(teamRes.team);
       if (appsRes) setApplications(appsRes.applications.filter((a) => a.status === 'pending'));
-      if (challengesRes && Array.isArray(challengesRes.challenges)) {
-        setChallenges(challengesRes.challenges);
-      } else {
-        setChallenges([]);
-      }
     }).finally(() => setLoading(false));
   }, [open, myTeamId]);
 
@@ -103,18 +96,18 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
   async function handleLaunchChallenge(skillSlug: string) {
     if (!myTeamId) return;
     try {
-      const res = await apiFetch<{ challenge: { id: string; title: string; status: string; skillSlug: string } }>(
+      const res = await apiFetch<{ id: string; title: string; status: string; skillSlug: string }>(
         `/v1/teams/${myTeamId}/challenges`,
         { method: 'POST', body: JSON.stringify({ skillSlug }) },
       );
-      setChallenges((prev) => [...prev, res.challenge]);
-      setLaunchModalOpen(false);
-      // Navigate to challenge
-      if (currentEventId) {
-        navigate(`/event/${currentEventId}/challenge/${res.challenge.id}`);
-        onClose();
+      if (res?.id) {
+        setLaunchModalOpen(false);
+        if (currentEventId) {
+          navigate(`/event/${currentEventId}/team/${myTeamId}/challenge/${res.id}`);
+          onClose();
+        }
       }
-    } catch { /* silent */ }
+    } catch { /* endpoint may fail if LLM unavailable */ }
   }
 
   if (!open) return null;
@@ -140,7 +133,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
   }
 
   const onlineCount = team ? team.members.filter((m) => onlineIds.has(m.id)).length : 0;
-  const activeChallenge = challenges.find((c) => c && (c.status === 'active' || c.status === 'running'));
 
   return (
     <>
@@ -234,34 +226,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
             </section>
           )}
 
-          {/* Active challenge */}
-          {activeChallenge && (
-            <section className="border-b border-gray-200 dark:border-[#202832] px-5 py-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Active challenge</h2>
-                  <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Your team is currently testing</p>
-                </div>
-                <span className="rounded-md border border-[#21d69a]/20 bg-[#21d69a]/[.07] px-1.5 py-1 text-[8px] font-bold uppercase text-[#21d69a]">● Live</span>
-              </div>
-              <div className="rounded-xl border border-[#21d69a]/15 bg-[#21d69a]/[.035] p-3.5" style={{ boxShadow: 'inset 0 0 0 1px rgba(33,214,154,.14), 0 0 30px rgba(33,214,154,.055)' }}>
-                <div className="text-sm font-semibold text-[#111318] dark:text-[#f4f6f8]">{activeChallenge.title}</div>
-                <div className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">Skill challenge · {activeChallenge.skillSlug}</div>
-                <button
-                  onClick={() => {
-                    if (currentEventId) {
-                      navigate(`/event/${currentEventId}/challenge/${activeChallenge.id}`);
-                      onClose();
-                    }
-                  }}
-                  className="mt-3.5 h-9 w-full rounded-[9px] bg-[#21d69a] text-xs font-bold text-[#03150f] hover:brightness-105 transition-all"
-                >
-                  Join Challenge →
-                </button>
-              </div>
-            </section>
-          )}
-
           {/* Quick actions */}
           <section className="border-b border-gray-200 dark:border-[#202832] px-5 py-5">
             <div className="mb-3.5">
@@ -341,36 +305,6 @@ export function TeamPanel({ open, onClose }: TeamPanelProps) {
             </section>
           )}
 
-          {/* Challenge history */}
-          {challenges.length > 0 && (
-            <section className="px-5 py-5">
-              <div className="mb-3.5">
-                <h2 className="text-xs font-semibold text-[#111318] dark:text-[#f4f6f8]">Challenge history</h2>
-                <p className="mt-0.5 text-[10px] text-gray-400 dark:text-[#68717d]">Previous team skill checks</p>
-              </div>
-              <div className="space-y-1">
-                {challenges.filter((c) => c.status !== 'active' && c.status !== 'running').map((ch) => (
-                  <button
-                    key={ch.id}
-                    onClick={() => {
-                      if (currentEventId) {
-                        navigate(`/event/${currentEventId}/challenge/${ch.id}`);
-                        onClose();
-                      }
-                    }}
-                    className="flex w-full items-center gap-3 rounded-[9px] p-2.5 text-left hover:bg-gray-50 dark:hover:bg-[#10151b] transition-colors"
-                  >
-                    <span className="flex h-8 w-8 items-center justify-center rounded-[7px] bg-[#8b5cf6]/[.09] text-[#a78bfa] text-xs shrink-0">✦</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[11px] font-semibold text-[#111318] dark:text-[#f4f6f8]">{ch.title}</span>
-                      <span className="block mt-0.5 text-[9px] text-gray-400 dark:text-[#68717d]">{ch.skillSlug} · {ch.status}</span>
-                    </span>
-                    <span className="text-[10px] text-gray-400">→</span>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
         </div>
 
         {/* Footer */}
