@@ -15,6 +15,7 @@ export function drawNode(
   ctx: CanvasRenderingContext2D,
   globalScale: number,
   dimmed?: boolean,
+  highlighted?: boolean,
 ): void {
   const x = node.x ?? 0;
   const y = node.y ?? 0;
@@ -77,6 +78,17 @@ export function drawNode(
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
 
+  // --- Search highlight ring ---
+  if (highlighted) {
+    ctx.beginPath();
+    ctx.arc(x, y, visual.radius + 6, 0, 2 * Math.PI);
+    ctx.strokeStyle = '#12c7e5';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([4, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
   ctx.restore();
 
   // --- Draw label ---
@@ -95,15 +107,16 @@ export function drawNode(
     ctx.textBaseline = 'top';
 
     const labelY = y + visual.radius + 3;
+    const isDark = document.documentElement.classList.contains('dark');
 
-    // Dark background stroke for contrast
-    ctx.strokeStyle = 'rgba(7, 8, 13, 0.95)';
+    // Background stroke for contrast (adapts to theme)
+    ctx.strokeStyle = isDark ? 'rgba(7, 8, 13, 0.95)' : 'rgba(255, 255, 255, 0.95)';
     ctx.lineWidth = 3.5 / globalScale;
     ctx.lineJoin = 'round';
     ctx.strokeText(node.label, x, labelY);
 
-    // Fill with soft white
-    ctx.fillStyle = 'rgba(240, 240, 255, 0.92)';
+    // Text fill (adapts to theme)
+    ctx.fillStyle = isDark ? 'rgba(240, 240, 255, 0.92)' : 'rgba(17, 19, 24, 0.9)';
     ctx.fillText(node.label, x, labelY);
   }
 
@@ -112,18 +125,19 @@ export function drawNode(
   }
 }
 
-/** Person: dark filled circle with colored stroke ring */
+/** Person: filled circle with colored stroke ring (adapts to theme) */
 function drawPersonNode(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   radius: number,
-  fill: string,
+  _fill: string,
   stroke: string,
 ): void {
+  const isDark = document.documentElement.classList.contains('dark');
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, 2 * Math.PI);
-  ctx.fillStyle = fill;
+  ctx.fillStyle = isDark ? '#171c2a' : '#ffffff';
   ctx.fill();
   ctx.strokeStyle = stroke;
   ctx.lineWidth = 2.5;

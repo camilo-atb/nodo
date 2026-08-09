@@ -18,7 +18,6 @@ import { useGraphData } from '@/hooks/useGraphData';
 import type { ForceNode, ForceLink } from '@/hooks/useGraphData';
 import { drawNode } from './nodeRenderer';
 import { drawLink } from './linkRenderer';
-import { GraphControls } from './GraphControls';
 import { useEventStore } from '@/stores/eventStore';
 import type { GraphFilter } from '@/types/ui';
 import type { NodeObject, LinkObject } from 'react-force-graph-2d';
@@ -31,13 +30,19 @@ interface TooltipData {
   y: number;
 }
 
-export function GraphPanel() {
-  const [filter, setFilter] = useState<GraphFilter>({
+interface GraphPanelProps {
+  filter?: GraphFilter;
+  searchQuery?: string;
+}
+
+export function GraphPanel({ filter: externalFilter, searchQuery }: GraphPanelProps = {}) {
+  const [internalFilter] = useState<GraphFilter>({
     showPersons: true,
     showTeams: true,
-    showIdeas: true,
     showSkills: true,
   });
+
+  const filter = externalFilter ?? internalFilter;
 
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -149,9 +154,12 @@ export function GraphPanel() {
     (nodeObj: NodeObject<ForceNode>, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const node = nodeObj as unknown as ForceNode;
       const dimmed = hoveredNode ? !isNodeConnected(node.id) : false;
-      drawNode(node, ctx, globalScale, dimmed);
+      const highlighted = searchQuery
+        ? node.label.toLowerCase().includes(searchQuery.toLowerCase())
+        : false;
+      drawNode(node, ctx, globalScale, dimmed, highlighted);
     },
-    [hoveredNode, isNodeConnected],
+    [hoveredNode, isNodeConnected, searchQuery],
   );
 
   // --- Custom render: link ---
@@ -175,12 +183,6 @@ export function GraphPanel() {
         }}
       />
 
-      {/* Filter controls */}
-      <GraphControls filter={filter} onFilterChange={setFilter} />
-
-      {/* Legend */}
-      <GraphLegend />
-
       {/* Tooltip overlay */}
       {tooltip && <NodeTooltip data={tooltip} />}
 
@@ -203,7 +205,7 @@ export function GraphPanel() {
           ctx.arc(x, y, hitRadius, 0, 2 * Math.PI);
           ctx.fill();
         }}
-        backgroundColor="#07080d"
+        backgroundColor="rgba(0,0,0,0)"
         cooldownTicks={300}
         warmupTicks={200}
         nodeId="id"
@@ -256,55 +258,4 @@ function NodeTooltip({ data }: { data: TooltipData }) {
   );
 }
 
-// ─── Legend Component ─────────────────────────────────────────────────────────
 
-function GraphLegend() {
-  return (
-    <div className="absolute bottom-4 left-4 z-10 px-3 py-2 rounded-lg bg-panel/80 backdrop-blur-sm border border-border/50 text-[9px] leading-relaxed max-w-[140px]">
-      <div className="flex flex-col gap-1">
-        {/* Node types */}
-        <LegendItem>
-          <span className="inline-block w-3 h-3 rounded-full border-2" style={{ borderColor: '#6d7aa3', backgroundColor: '#171c2a' }} />
-          <span className="text-white/60">Person</span>
-        </LegendItem>
-        <LegendItem>
-          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: '#2dd4bf' }} />
-          <span className="text-white/60">Team</span>
-        </LegendItem>
-        <LegendItem>
-          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
-          <span className="text-white/60">Idea</span>
-        </LegendItem>
-        <LegendItem>
-          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#64748b' }} />
-          <span className="text-white/60">Skill</span>
-        </LegendItem>
-        <LegendItem>
-          <span className="inline-block w-3 h-3 rounded-full items-center justify-center text-[8px]" style={{ backgroundColor: '#a78bfa', color: '#fff' }}>✦</span>
-          <span className="text-white/60">AI Agent</span>
-        </LegendItem>
-
-        {/* Separator */}
-        <div className="border-t border-white/10 my-1" />
-
-        {/* Edge types */}
-        <LegendItem>
-          <span className="inline-block w-5 h-px" style={{ backgroundColor: '#4f5a85' }} />
-          <span className="text-white/60">Connection</span>
-        </LegendItem>
-        <LegendItem>
-          <span className="inline-block w-5 h-0 border-t border-dashed" style={{ borderColor: '#06b6d4' }} />
-          <span className="text-cyan-400/80">AI Match</span>
-        </LegendItem>
-      </div>
-    </div>
-  );
-}
-
-function LegendItem({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2">
-      {children}
-    </div>
-  );
-}

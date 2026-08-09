@@ -20,7 +20,6 @@ interface ToggleItem {
 const toggles: ToggleItem[] = [
   { key: 'showPersons', label: 'Person', kind: 'person' },
   { key: 'showTeams', label: 'Team', kind: 'team' },
-  { key: 'showIdeas', label: 'Idea', kind: 'idea' },
   { key: 'showSkills', label: 'Skill', kind: 'skill' },
 ];
 

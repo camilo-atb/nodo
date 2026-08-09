@@ -5,7 +5,8 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { Avatar } from '@/components/base/Avatar';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { EditProfileModal } from '@/components/profile/EditProfileModal';
-import type { MainTab } from '@/components/layout/MainLayout';
+
+export type MainTab = 'marketplace' | 'graph' | 'activity';
 
 interface HeaderProps {
   activeTab: MainTab;

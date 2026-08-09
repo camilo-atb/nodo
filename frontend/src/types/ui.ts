@@ -6,7 +6,6 @@
 export type GraphFilter = {
   showPersons: boolean;
   showTeams: boolean;
-  showIdeas: boolean;
   showSkills: boolean;
 };
 

@@ -31,7 +31,6 @@ export interface ForceLink {
 const defaultFilter: GraphFilter = {
   showPersons: true,
   showTeams: true,
-  showIdeas: true,
   showSkills: true,
 };
 
@@ -43,7 +42,7 @@ export function useGraphData(filter: GraphFilter = defaultFilter) {
     const kindVisible: Record<NodeKind, boolean> = {
       person: filter.showPersons,
       team: filter.showTeams,
-      idea: filter.showIdeas,
+      idea: false,
       skill: filter.showSkills,
       agent: true, // agents always visible
     };
@@ -82,5 +81,5 @@ export function useGraphData(filter: GraphFilter = defaultFilter) {
     }
 
     return { nodes, links };
-  }, [nodesMap, edgesMap, filter.showPersons, filter.showTeams, filter.showIdeas, filter.showSkills]);
+  }, [nodesMap, edgesMap, filter.showPersons, filter.showTeams, filter.showSkills]);
 }
