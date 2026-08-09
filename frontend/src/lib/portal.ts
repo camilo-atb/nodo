@@ -15,6 +15,7 @@ export const portal = new Portal({
 /**
  * Callback async que el SDK invoca en connect, reconnect y token expiry.
  * Llama al backend para obtener un JWT fresco de 15 min.
+ * Reintenta hasta 3 veces si el backend da 500 (Portal cloud timeout).
  */
 export async function fetchPortalToken(): Promise<string> {
   const sessionToken = useSessionStore.getState().sessionToken;
@@ -22,18 +23,33 @@ export async function fetchPortalToken(): Promise<string> {
     throw new Error('No session token available');
   }
 
-  const res = await fetch(`${API_URL}/v1/portal/token`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${sessionToken}`,
-    },
-  });
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    throw new Error(`Portal token request failed: ${res.status}`);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) {
+      // Wait before retry: 1s, then 2s
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/v1/portal/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`,
+        },
+      });
+
+      if (res.ok) {
+        const { token } = await res.json();
+        return token;
+      }
+
+      lastError = new Error(`Portal token request failed: ${res.status}`);
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error('Network error');
+    }
   }
 
-  const { token } = await res.json();
-  return token;
+  throw lastError ?? new Error('Portal token failed after retries');
 }
