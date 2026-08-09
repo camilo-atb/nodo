@@ -96,7 +96,7 @@ const main = async (): Promise<void> => {
   const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
     // URL completa, no solo el puerto: así la terminal la vuelve clicable.
     // No hay "página de bienvenida" que visitar — esto es una API, no un
-    // frontend — pero /health y /v1/graph sí se pueden abrir directo.
+    // frontend — /health sí se puede abrir directo; /v1/graph exige sesión y Event.
     console.log(`[arranque] Nodo API escuchando en http://localhost:${info.port} (${env.NODE_ENV})`);
     console.log(`[arranque] prueba rápida: http://localhost:${info.port}/health`);
   });

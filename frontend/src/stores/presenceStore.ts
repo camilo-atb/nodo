@@ -13,6 +13,7 @@ interface PresenceState {
   setOffline: (id: string) => void;
   replaceAll: (ids: string[]) => void;
   setAggregate: (count: number) => void;
+  clear: () => void;
 }
 
 export const usePresenceStore = create<PresenceState>((set) => ({
@@ -47,4 +48,5 @@ export const usePresenceStore = create<PresenceState>((set) => ({
       kind: 'aggregate',
       count,
     }),
+  clear: () => set({ online: new Set(), kind: 'unknown', count: 0 }),
 }));

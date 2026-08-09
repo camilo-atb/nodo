@@ -27,20 +27,18 @@ export default defineConfig({
   // nuestro JWKS por internet — imposible con el backend en localhost.
 
   channels: {
-    'network-main': {
+    'event-*': {
       anonymous: false,
       access: 'authz',
 
-      // Los clientes leen y emiten señales efímeras. Nadie publica eventos
-      // de dominio: eso es del backend con la sk_ (ADR-005).
       authz: (ctx) => {
         if (ctx.claims.anon) return block('Crea tu perfil para entrar.');
+        const eventId = ctx.channel.id.slice('event-'.length);
+        const events = ctx.claims.events as string[] | undefined;
+        if (!events?.includes(eventId)) return block('No estás suscrito a este evento.');
         return allow({ publish: false, sendDirect: false });
       },
 
-      // Un mensaje dirigido se convierte en InboxItem. Sin publicación
-      // extra (ADR-008). `personName`/`teamName` viajan en el propio
-      // content porque este código corre sin acceso a la base de datos.
       notify: (ctx) => {
         if (ctx.message.type !== 'match.suggested') return null;
         const { suggestion } = ctx.message.content as { suggestion: SuggestionDTO };
@@ -50,6 +48,13 @@ export default defineConfig({
           to: [suggestion.personId],
         };
       },
+    },
+
+    'network-main': {
+      anonymous: false,
+      access: 'authz',
+      // Canal legado: bloquear también impide leer su historial global.
+      authz: () => block('Usa el canal privado del evento.'),
     },
 
     'team-*': {

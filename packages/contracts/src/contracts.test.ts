@@ -3,6 +3,7 @@ import {
   AGENT_ID,
   ApplicationCreated,
   edgeId,
+  eventChannel,
   MAIN_CHANNEL,
   MainEvent,
   MatchSuggested,
@@ -220,6 +221,7 @@ describe('sobres', () => {
 describe('canales e ids de arista', () => {
   it('nombra el canal de equipo como lo espera authz', () => {
     expect(teamChannel('tm_healthai')).toBe('team-tm_healthai');
+    expect(eventChannel('ev_hack')).toBe('event-ev_hack');
     expect(MAIN_CHANNEL).toBe('network-main');
   });
 

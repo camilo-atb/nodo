@@ -5,6 +5,7 @@ import {
   type ApplicationsResponse,
 } from '@nodo/contracts';
 import { triggerTeamNeedsPerson } from '../../agent/triggers.js';
+import { findSuggestionEventId } from '../../agent/suggestion-repository.js';
 import {
   acceptApplication,
   createApplication,
@@ -17,6 +18,7 @@ import {
 import { findTeamRow, deriveAndPersistTeamStatus, getPersonRef, loadTeamDTO } from '../../db/teams-repo.js';
 import { setPersonStatus } from '../../db/people-repo.js';
 import { errors } from '../../domain/errors.js';
+import { isSubscribedToEvent } from '../../db/events-repo.js';
 import {
   applicationCreated,
   applicationResolved,
@@ -39,6 +41,9 @@ export const applicationsRoutes = (ctx: AppContext) => {
 
     const team = await findTeamRow(ctx.db, teamId);
     if (!team) throw errors.notFound('No encontramos ese equipo.');
+    if (!(await isSubscribedToEvent(ctx.db, team.eventId, auth.personId))) {
+      throw errors.forbidden('Debes suscribirte al evento antes de solicitar unirte.');
+    }
 
     // Invariante 4, con mensaje de error legible antes de que lo aplique el
     // índice único parcial de docs/04.
@@ -99,7 +104,7 @@ export const applicationsRoutes = (ctx: AppContext) => {
       const team = (await loadTeamDTO(ctx.db, application.teamId))!;
       const personRef = (await getPersonRef(ctx.db, application.person.id))!;
 
-      await ctx.publisher.publishMain(teamMemberJoined(team, personRef, 'teamed'));
+      await ctx.publisher.publishEvent(team.eventId, teamMemberJoined(team, personRef, 'teamed'));
 
       const resolved = (await findApplicationById(ctx.db, application.id))!;
       await ctx.publisher.publishTeam(
@@ -108,7 +113,8 @@ export const applicationsRoutes = (ctx: AppContext) => {
       );
 
       for (const suggestionId of invalidatedSuggestionIds) {
-        await ctx.publisher.publishMain(matchExpired(suggestionId));
+        const eventId = await findSuggestionEventId(ctx.db, suggestionId);
+        if (eventId) await ctx.publisher.publishEvent(eventId, matchExpired(suggestionId));
       }
 
       triggerTeamNeedsPerson(ctx.db, ctx.matchmaker, ctx.scheduler, application.teamId, 'team.member_joined');

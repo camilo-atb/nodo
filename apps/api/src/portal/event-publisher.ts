@@ -1,6 +1,6 @@
 import {
-  MAIN_CHANNEL,
   challengeChannel,
+  eventChannel,
   teamChannel,
   type AnyEvent,
   type ChallengeEvent,
@@ -64,9 +64,9 @@ export class EventPublisher {
     private readonly outboxStore: OutboxStore,
   ) {}
 
-  /** Actualiza la marca de agua de `network-main` (ADR-009). */
-  async publishMain(envelope: MainEvent): Promise<void> {
-    await this.publish(MAIN_CHANNEL, envelope, { isMain: true });
+  /** Grafo y feed aislados de un Event, con marca de agua propia. */
+  async publishEvent(eventId: string, envelope: MainEvent): Promise<void> {
+    await this.publish(eventChannel(eventId), envelope, { isMain: true });
   }
 
   /** Los sobres de `team-{id}` no mutan el grafo y no llevan marca de agua. */

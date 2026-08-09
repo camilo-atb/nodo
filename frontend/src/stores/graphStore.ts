@@ -16,6 +16,7 @@ export interface GraphActions {
   loadSnapshot: (snapshot: { nodes: GraphNode[]; edges: GraphEdge[]; seq: number }) => void;
   applyPatch: (patch: GraphPatch, seq: number) => void;
   setConnectionStatus: (status: GraphState['connectionStatus']) => void;
+  reset: () => void;
 }
 
 export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
@@ -75,4 +76,5 @@ export const useGraphStore = create<GraphState & GraphActions>((set, get) => ({
   },
 
   setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
+  reset: () => set({ nodes: new Map(), edges: new Map(), lastSeq: 0, connectionStatus: 'idle' }),
 }));

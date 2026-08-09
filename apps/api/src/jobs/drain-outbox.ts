@@ -1,6 +1,5 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { AnyEvent } from '@nodo/contracts';
-import { MAIN_CHANNEL } from '@nodo/contracts';
 import type { Db } from '../db/client.js';
 import { channelWatermarks, outbox } from '../db/schema.js';
 import type { PortalPublisher } from '../portal/publisher.js';
@@ -24,10 +23,10 @@ export const drainOutbox = async (db: Db, portal: PortalPublisher, batchSize = 2
     try {
       const { seq } = await portal.publish(row.channel, row.envelope as AnyEvent);
       await db.update(outbox).set({ published: true }).where(eq(outbox.id, row.id));
-      if (row.channel === MAIN_CHANNEL) {
+      if (row.channel.startsWith('event-')) {
         await db
           .insert(channelWatermarks)
-          .values({ channel: MAIN_CHANNEL, seq })
+          .values({ channel: row.channel, seq })
           .onConflictDoUpdate({ target: channelWatermarks.channel, set: { seq, updatedAt: sql`now()` } });
       }
       drained += 1;

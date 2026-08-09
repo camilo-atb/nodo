@@ -6,6 +6,8 @@ import { Badge } from '@/components/base/Badge';
 import { Button } from '@/components/base/Button';
 import { Spinner } from '@/components/base/Spinner';
 import { MainLayout } from '@/components/layout/MainLayout';
+import type { EventSubscriptionResponse } from '@nodo/contracts';
+import { fetchPortalToken, portal } from '@/lib/portal';
 
 const typeColors: Record<EventType, 'accent' | 'green'> = {
   hackathon: 'accent',
@@ -23,15 +25,15 @@ export function EventPage() {
   const [joining, setJoining] = useState(false);
   const [event, setEvent] = useState<NodoEvent | null>(null);
 
-  const joinedKey = eventId ? `nodo_joined_${eventId}` : null;
-  const [joined, setJoined] = useState(() => {
-    if (!joinedKey) return false;
-    return localStorage.getItem(joinedKey) === 'true';
-  });
+  const [joined, setJoined] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!eventId) return;
     setCurrentEvent(eventId);
+    setJoined(null);
+    void apiFetch<EventSubscriptionResponse>(`/v1/events/${eventId}/subscription`)
+      .then(({ subscribed }) => setJoined(subscribed))
+      .catch(() => setJoined(false));
 
     const found = events.find((e) => e.id === eventId);
     if (found) {
@@ -49,19 +51,23 @@ export function EventPage() {
   }, [eventId, events, setCurrentEvent]);
 
   async function handleJoin() {
-    if (!eventId || !joinedKey) return;
+    if (!eventId) return;
     setJoining(true);
     try {
-      await apiFetch(`/v1/events/${eventId}/join`, { method: 'POST' });
+      await apiFetch<EventSubscriptionResponse>(`/v1/events/${eventId}/subscription`, {
+        method: 'POST',
+      });
+      // La nueva suscripción vive en el claim `events`; fuerza al SDK a
+      // reautenticar antes de montar el canal recién autorizado.
+      portal.setToken(fetchPortalToken);
+      setJoined(true);
     } catch {
-      // Proceed anyway — backend may not have this endpoint yet
+      setJoined(false);
     }
-    localStorage.setItem(joinedKey, 'true');
-    setJoined(true);
     setJoining(false);
   }
 
-  if (!event) {
+  if (!event || joined === null) {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <Spinner size="lg" />
@@ -72,7 +78,7 @@ export function EventPage() {
   if (joined) {
     return (
       <div className="h-screen bg-bg flex flex-col overflow-hidden">
-        <MainLayout />
+        <MainLayout eventId={eventId!} />
       </div>
     );
   }

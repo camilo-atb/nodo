@@ -1,7 +1,7 @@
 import { loadEnv } from '../config.js';
 import { createDb } from './client.js';
 import { eq } from 'drizzle-orm';
-import { nodes, people, skillAliases, skills } from './schema.js';
+import { eventSubscriptions, nodes, people, skillAliases, skills } from './schema.js';
 import { SKILLS, SKILL_ALIASES } from './vocabulary.js';
 import { createPerson } from './people-repo.js';
 import { addMember, createTeam, deriveAndPersistTeamStatus } from './teams-repo.js';
@@ -77,6 +77,7 @@ const seedPerson = async (
     recoveryCode: recoveryCode(),
     skills: input.skillSlugs.map(skill),
   });
+  await db.insert(eventSubscriptions).values({ eventId: DEFAULT_EVENT_ID, personId: id });
   return id;
 };
 

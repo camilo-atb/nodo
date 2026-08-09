@@ -1,4 +1,4 @@
-import type { NeedRef } from '@nodo/contracts';
+import { DEFAULT_EVENT_ID, type NeedRef } from '@nodo/contracts';
 import { matchExpired, matchSuggested } from '../domain/envelopes.js';
 import { suggestionId } from '../domain/ids.js';
 import { toSuggestionDTO } from '../domain/mappers.js';
@@ -22,7 +22,7 @@ export type MatchmakerConfig = {
 
 export type TeamTrigger = {
   trigger: string;
-  team: { id: string; name: string; pitch: string | null; needs: NeedRef[]; language: string };
+  team: { id: string; name: string; pitch: string | null; needs: NeedRef[]; language: string; eventId?: string };
 };
 
 export type PersonTrigger = {
@@ -71,6 +71,7 @@ export class MatchmakerService {
         needs: team.needs,
         candidate,
         language: team.language,
+        eventId: team.eventId ?? candidate.eventId ?? DEFAULT_EVENT_ID,
       });
       if (result.llmLatencyMs !== null) llmLatencyMs = result.llmLatencyMs;
       fallbackUsed = fallbackUsed || result.fallbackUsed;
@@ -108,6 +109,7 @@ export class MatchmakerService {
         needs: candidate.matchedSkills,
         candidate,
         language: person.language,
+        eventId: candidate.eventId ?? DEFAULT_EVENT_ID,
       });
       if (result.llmLatencyMs !== null) llmLatencyMs = result.llmLatencyMs;
       fallbackUsed = fallbackUsed || result.fallbackUsed;
@@ -136,6 +138,7 @@ export class MatchmakerService {
     needs: NeedRef[];
     candidate: Candidate;
     language: string;
+    eventId: string;
   }): Promise<{ llmLatencyMs: number | null; fallbackUsed: boolean }> {
     const matchedSkillLabels = input.candidate.matchedSkills.map((s) => s.label);
     const rationale = templateRationale(input.personName, input.teamName, matchedSkillLabels);
@@ -147,6 +150,7 @@ export class MatchmakerService {
       id,
       personId: input.personId,
       teamId: input.teamId,
+      eventId: input.eventId,
       score: input.candidate.score,
       direction: input.direction,
       matchedSkills: input.candidate.matchedSkills,
@@ -156,8 +160,8 @@ export class MatchmakerService {
     if (!claimed) return { llmLatencyMs: null, fallbackUsed: false };
 
     // Guardarraíles 3 y 4: topes por persona y por equipo, con desplazamiento.
-    await this.enforceCap({ personId: input.personId }, this.config.maxPerPerson);
-    await this.enforceCap({ teamId: input.teamId }, this.config.maxPerTeam);
+    await this.enforceCap({ personId: input.personId, eventId: input.eventId }, this.config.maxPerPerson);
+    await this.enforceCap({ teamId: input.teamId, eventId: input.eventId }, this.config.maxPerTeam);
 
     const dto = toSuggestionDTO({
       id,
@@ -174,7 +178,7 @@ export class MatchmakerService {
     });
 
     // Fase 1: el grafo se mueve YA, con el rationale de plantilla.
-    await this.publisher.publishMain(matchSuggested(dto));
+    await this.publisher.publishEvent(input.eventId, matchSuggested(dto));
 
     let llmLatencyMs: number | null = null;
     let fallbackUsed = false;
@@ -196,7 +200,7 @@ export class MatchmakerService {
       if (rationaleNamesAMatch(real, matchedSkillLabels)) {
         await this.suggestions.updateRationale(id, real);
         // Fase 2: mismo id de arista → el cliente ve el texto enriquecerse en sitio.
-        await this.publisher.publishMain(matchSuggested({ ...dto, rationale: real }));
+        await this.publisher.publishEvent(input.eventId, matchSuggested({ ...dto, rationale: real }));
       } else {
         fallbackUsed = true;
       }
@@ -208,7 +212,7 @@ export class MatchmakerService {
   }
 
   private async enforceCap(
-    filter: { personId: string } | { teamId: string },
+    filter: ({ personId: string } | { teamId: string }) & { eventId: string },
     max: number,
   ): Promise<void> {
     const count = await this.suggestions.countLive(filter);
@@ -218,7 +222,9 @@ export class MatchmakerService {
     if (!lowest) return;
 
     await this.suggestions.expire(lowest.id);
-    await this.publisher.publishMain(matchExpired(lowest.id));
+    // El filtro de candidatos garantiza que el par comparte Event.
+    // La eliminación se publica en ese mismo ámbito.
+    await this.publisher.publishEvent(filter.eventId, matchExpired(lowest.id));
   }
 
   private log(input: Omit<MatchmakerBatchLog, 'at' | 'aboveThreshold'>): void {

@@ -1,6 +1,6 @@
 import { and, eq, lte } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { suggestions } from '../db/schema.js';
+import { suggestions, teams } from '../db/schema.js';
 import { matchExpired } from '../domain/envelopes.js';
 import type { EventPublisher } from '../portal/event-publisher.js';
 
@@ -12,13 +12,14 @@ import type { EventPublisher } from '../portal/event-publisher.js';
  */
 export const expireDueSuggestions = async (db: Db, publisher: EventPublisher): Promise<number> => {
   const due = await db
-    .select({ id: suggestions.id })
+    .select({ id: suggestions.id, eventId: teams.eventId })
     .from(suggestions)
+    .innerJoin(teams, eq(teams.id, suggestions.teamId))
     .where(and(eq(suggestions.status, 'live'), lte(suggestions.expiresAt, new Date())));
 
   for (const row of due) {
     await db.update(suggestions).set({ status: 'expired' }).where(eq(suggestions.id, row.id));
-    await publisher.publishMain(matchExpired(row.id));
+    await publisher.publishEvent(row.eventId, matchExpired(row.id));
   }
 
   return due.length;

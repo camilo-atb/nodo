@@ -13,6 +13,7 @@ export type IssueTokenInput = {
   handle: string;
   name: string;
   teams: PortalTeamsClaim;
+  events: string[];
 };
 
 export class PortalTokenIssuer {
@@ -33,7 +34,12 @@ export class PortalTokenIssuer {
    */
   async issue(input: IssueTokenInput): Promise<{ token: string; expiresIn: number }> {
     const expiresIn = 15 * 60;
-    const token = await new SignJWT({ handle: input.handle, name: input.name, teams: input.teams })
+    const token = await new SignJWT({
+      handle: input.handle,
+      name: input.name,
+      teams: input.teams,
+      events: input.events,
+    })
       .setProtectedHeader({ alg: 'RS256', kid: this.kid })
       .setIssuer(this.issuer)
       .setSubject(input.personId)
@@ -100,7 +106,7 @@ export class PortalMintedIssuer implements TokenIssuer {
       body: JSON.stringify({
         userId: input.personId,
         username: input.name,
-        claims: { handle: input.handle, teams: input.teams },
+        claims: { handle: input.handle, teams: input.teams, events: input.events },
       }),
     });
 

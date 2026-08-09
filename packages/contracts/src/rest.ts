@@ -255,3 +255,7 @@ export type CreateEventRequest = z.infer<typeof CreateEventRequest>;
 
 export const EventsResponse = z.object({ events: z.array(EventDTO) });
 export type EventsResponse = z.infer<typeof EventsResponse>;
+
+/** Estado persistente de participación de la Person autenticada en un Event. */
+export const EventSubscriptionResponse = z.object({ subscribed: z.boolean() });
+export type EventSubscriptionResponse = z.infer<typeof EventSubscriptionResponse>;

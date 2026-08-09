@@ -1,6 +1,7 @@
 import { DEFAULT_EVENT_ID, CreateIdeaRequest, type IdeaResponse, type IdeasResponse } from '@nodo/contracts';
 import { createIdea, listIdeas, loadIdeaDTO, toggleInterest } from '../../db/ideas-repo.js';
 import { errors } from '../../domain/errors.js';
+import { isSubscribedToEvent } from '../../db/events-repo.js';
 import { ideaPublished } from '../../domain/envelopes.js';
 import { ideaId as newIdeaId } from '../../domain/ids.js';
 import type { AppContext } from '../context.js';
@@ -14,6 +15,10 @@ export const ideasRoutes = (ctx: AppContext) => {
     const auth = c.get('auth');
     const parsed = CreateIdeaRequest.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) throw errors.validation(parsed.error.issues);
+    const eventId = parsed.data.eventId ?? DEFAULT_EVENT_ID;
+    if (!(await isSubscribedToEvent(ctx.db, eventId, auth.personId))) {
+      throw errors.forbidden('Debes suscribirte al evento antes de publicar una idea.');
+    }
 
     const id = newIdeaId();
     await createIdea(ctx.db, {
@@ -21,11 +26,11 @@ export const ideasRoutes = (ctx: AppContext) => {
       title: parsed.data.title,
       summary: parsed.data.summary ?? null,
       authorId: auth.personId,
-      eventId: parsed.data.eventId ?? DEFAULT_EVENT_ID,
+      eventId,
     });
 
     const idea = (await loadIdeaDTO(ctx.db, id))!;
-    await ctx.publisher.publishMain(ideaPublished(idea));
+    await ctx.publisher.publishEvent(idea.eventId, ideaPublished(idea));
 
     const body: IdeaResponse = { idea };
     return c.json(body, 201);

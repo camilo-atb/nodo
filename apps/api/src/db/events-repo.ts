@@ -1,6 +1,6 @@
 import type { EventDTO, EventKind } from '@nodo/contracts';
-import { count, eq } from 'drizzle-orm';
-import { events, teams } from './schema.js';
+import { and, count, eq } from 'drizzle-orm';
+import { eventSubscriptions, events } from './schema.js';
 import type { Db } from './client.js';
 
 /**
@@ -52,8 +52,11 @@ const toEventDTO = (row: EventRow, participantCount: number): EventDTO => ({
   createdAt: row.createdAt.getTime(),
 });
 
-const countTeams = async (db: Db, eventId: string): Promise<number> => {
-  const [row] = await db.select({ n: count() }).from(teams).where(eq(teams.eventId, eventId));
+const countParticipants = async (db: Db, eventId: string): Promise<number> => {
+  const [row] = await db
+    .select({ n: count() })
+    .from(eventSubscriptions)
+    .where(eq(eventSubscriptions.eventId, eventId));
   return row?.n ?? 0;
 };
 
@@ -62,13 +65,13 @@ export const listEvents = async (db: Db, kind?: EventKind): Promise<EventDTO[]> 
     ? await selectEvent(db).where(eq(events.kind, kind))
     : await selectEvent(db);
 
-  return Promise.all(rows.map(async (r) => toEventDTO(r, await countTeams(db, r.id))));
+  return Promise.all(rows.map(async (r) => toEventDTO(r, await countParticipants(db, r.id))));
 };
 
 export const findEvent = async (db: Db, id: string): Promise<EventDTO | undefined> => {
   const [row] = await selectEvent(db).where(eq(events.id, id));
   if (!row) return undefined;
-  return toEventDTO(row, await countTeams(db, id));
+  return toEventDTO(row, await countParticipants(db, id));
 };
 
 export type CreateEventInput = {
@@ -83,4 +86,43 @@ export type CreateEventInput = {
 
 export const createEvent = async (db: Db, input: CreateEventInput): Promise<void> => {
   await db.insert(events).values(input);
+};
+
+export const isSubscribedToEvent = async (
+  db: Db,
+  eventId: string,
+  personId: string,
+): Promise<boolean> => {
+  const [row] = await db
+    .select({ personId: eventSubscriptions.personId })
+    .from(eventSubscriptions)
+    .where(
+      and(
+        eq(eventSubscriptions.eventId, eventId),
+        eq(eventSubscriptions.personId, personId),
+      ),
+    );
+  return row !== undefined;
+};
+
+/** Idempotente: suscribirse dos veces conserva una sola participación. */
+export const subscribeToEvent = async (
+  db: Db,
+  eventId: string,
+  personId: string,
+): Promise<boolean> => {
+  const inserted = await db
+    .insert(eventSubscriptions)
+    .values({ eventId, personId })
+    .onConflictDoNothing()
+    .returning({ personId: eventSubscriptions.personId });
+  return inserted.length > 0;
+};
+
+export const listSubscribedEventIds = async (db: Db, personId: string): Promise<string[]> => {
+  const rows = await db
+    .select({ eventId: eventSubscriptions.eventId })
+    .from(eventSubscriptions)
+    .where(eq(eventSubscriptions.personId, personId));
+  return rows.map((row) => row.eventId);
 };

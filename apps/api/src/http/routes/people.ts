@@ -18,6 +18,7 @@ import {
   updatePerson,
 } from '../../db/people-repo.js';
 import { errors } from '../../domain/errors.js';
+import { listSubscribedEventIds } from '../../db/events-repo.js';
 import { personStatusChanged, personUpserted } from '../../domain/envelopes.js';
 import { personId as newPersonId, recoveryCode, sessionToken } from '../../domain/ids.js';
 import { assertKnownSkills } from '../../domain/invariants.js';
@@ -33,6 +34,11 @@ const resolveRequestedSkills = (ctx: AppContext, slugs: string[]): SkillRef[] =>
 
 export const peopleRoutes = (ctx: AppContext) => {
   const router = createRouter();
+
+  const publishToSubscriptions = async (personId: string, envelope: ReturnType<typeof personUpserted> | ReturnType<typeof personStatusChanged>) => {
+    const eventIds = await listSubscribedEventIds(ctx.db, personId);
+    await Promise.all(eventIds.map((eventId) => ctx.publisher.publishEvent(eventId, envelope)));
+  };
 
   /**
    * Única ruta de escritura sin autenticar: acuña identidad y perfil en el
@@ -74,7 +80,7 @@ export const peopleRoutes = (ctx: AppContext) => {
     });
 
     const person = (await loadPersonDTO(ctx.db, id))!;
-    await ctx.publisher.publishMain(personUpserted(person, skills));
+    // Todavía no pertenece a ningún Event: se publicará al suscribirse.
     triggerPersonSeeksTeam(ctx.db, ctx.matchmaker, ctx.scheduler, id, 'person.upserted');
 
     const body: CreatePersonResponse = {
@@ -118,7 +124,7 @@ export const peopleRoutes = (ctx: AppContext) => {
 
     const person = (await loadPersonDTO(ctx.db, id))!;
     const currentSkills = await getPersonSkills(ctx.db, id);
-    await ctx.publisher.publishMain(personUpserted(person, currentSkills, removed));
+    await publishToSubscriptions(id, personUpserted(person, currentSkills, removed));
 
     if (nextSkills !== undefined) {
       triggerPersonSeeksTeam(ctx.db, ctx.matchmaker, ctx.scheduler, id, 'person.upserted');
@@ -143,7 +149,7 @@ export const peopleRoutes = (ctx: AppContext) => {
     await setPersonStatus(ctx.db, id, parsed.data.status);
 
     const person = (await loadPersonDTO(ctx.db, id))!;
-    await ctx.publisher.publishMain(personStatusChanged(person, current.status));
+    await publishToSubscriptions(id, personStatusChanged(person, current.status));
 
     if (parsed.data.status === 'looking') {
       triggerPersonSeeksTeam(ctx.db, ctx.matchmaker, ctx.scheduler, id, 'person.status_changed');

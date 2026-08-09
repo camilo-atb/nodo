@@ -21,6 +21,8 @@ import {
 // (`room.view()`), no de abrir sockets extra (docs/03).
 
 export const MAIN_CHANNEL = 'network-main';
+/** Canal privado de grafo, feed y presencia de un Event. */
+export const eventChannel = (eventId: string): string => `event-${eventId}`;
 export const teamChannel = (teamId: string): string => `team-${teamId}`;
 
 // ─── network-main ───────────────────────────────────────────────────────────

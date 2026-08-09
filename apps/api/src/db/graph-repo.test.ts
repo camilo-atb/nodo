@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { filterByEvent } from './graph-repo.js';
 
 /**
- * ADR-013: `Event` es una dimensión de filtro, no un ámbito de canal ni un
- * `NodeKind`. `network-main` sigue siendo un solo canal para toda la red y el
- * recorte ocurre al servir el snapshot.
+ * Event no es un NodeKind, pero sí es el ámbito de aislamiento. Solo las
+ * Person suscritas forman parte de su proyección.
  */
 describe('filterByEvent — acotar el grafo a un contenedor (ADR-013)', () => {
   const node = (id: string, kind: GraphNode['kind'], eventId?: string): GraphNode => ({
@@ -43,29 +42,29 @@ describe('filterByEvent — acotar el grafo a un contenedor (ADR-013)', () => {
   });
 
   it('deja solo los nodos del contenedor pedido', () => {
-    const ids = filterByEvent(graph, 'ev_hack').nodes.map((n) => n.id);
+    const ids = filterByEvent(graph, 'ev_hack', new Set(['per_laura'])).nodes.map((n) => n.id);
     expect(ids).toContain('tm_health');
     expect(ids).not.toContain('tm_growth');
   });
 
   /**
-   * Personas, skills y agentes no pertenecen a ningún contenedor: participan
-   * en todos. Filtrarlos dejaría el grafo sin la mitad de sus extremos.
+   * Skills y agentes son conceptos globales; Person requiere suscripción.
    */
-  it('nunca filtra lo que no tiene contenedor', () => {
-    const ids = filterByEvent(graph, 'ev_hack').nodes.map((n) => n.id);
+  it('incluye únicamente participantes suscritos, además de skills y agentes', () => {
+    const ids = filterByEvent(graph, 'ev_hack', new Set(['per_laura'])).nodes.map((n) => n.id);
     expect(ids).toEqual(expect.arrayContaining(['per_laura', 'sk_go', 'matchmaker']));
+    expect(filterByEvent(graph, 'ev_hack').nodes.map((n) => n.id)).not.toContain('per_laura');
   });
 
   /** Una arista hacia un nodo que no viajó dejaría al cliente con un extremo colgando. */
   it('descarta las aristas que perdieron un extremo', () => {
-    const ids = filterByEvent(graph, 'ev_hack').edges.map((e) => e.id);
+    const ids = filterByEvent(graph, 'ev_hack', new Set(['per_laura'])).edges.map((e) => e.id);
     expect(ids).toEqual(['e1', 'e3']);
   });
 
   it('un contenedor inexistente deja fuera todo lo que sí tiene contenedor', () => {
     const result = filterByEvent(graph, 'ev_no_existe');
-    expect(result.nodes.map((n) => n.id)).toEqual(['per_laura', 'sk_go', 'matchmaker']);
-    expect(result.edges.map((e) => e.id)).toEqual(['e3']);
+    expect(result.nodes.map((n) => n.id)).toEqual(['sk_go', 'matchmaker']);
+    expect(result.edges.map((e) => e.id)).toEqual([]);
   });
 });

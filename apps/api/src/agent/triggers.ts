@@ -37,6 +37,7 @@ export const triggerTeamNeedsPerson = (
         pitch: team.pitch,
         needs: team.needs,
         language: lead?.language ?? 'es',
+        eventId: team.eventId,
       },
     });
   });

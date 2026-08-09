@@ -1,5 +1,5 @@
 /**
- * Hook de suscripción al canal network-main.
+ * Hook de suscripción al canal privado del Event activo.
  * Verifica seq, aplica patch al graphStore, alimenta feedStore.
  *
  * Montar este hook ES la suscripción — no hay .subscribe() aparte.
@@ -10,8 +10,8 @@ import { useChannel } from '@portalsdk/react';
 import { useGraphStore } from '@/stores/graphStore';
 import { useFeedStore } from '@/stores/feedStore';
 import { usePresenceStore } from '@/stores/presenceStore';
-import { CHANNEL_NETWORK_MAIN, API_URL } from '@/lib/constants';
-import type { GraphPatch, FeedLine } from '@nodo/contracts';
+import { apiFetch } from '@/lib/api';
+import { eventChannel, type FeedLine, type GraphPatch, type GraphSnapshot } from '@nodo/contracts';
 
 /**
  * The content shape inside Portal's Message envelope.
@@ -24,7 +24,7 @@ interface MainEventContent {
   [key: string]: unknown;
 }
 
-export function usePortalChannel() {
+export function usePortalChannel(eventId: string) {
   /**
    * Carga inicial del grafo, **independiente de Portal**.
    *
@@ -35,15 +35,24 @@ export function usePortalChannel() {
    * perfil, sin `pk_`, sin `portal deploy`— la aplicación se veía vacía aunque
    * el API tuviera los datos.
    *
-   * `GET /v1/graph` es público y sin autenticación por diseño, así que la red
-   * puede leerse siempre; el tiempo real solo añade los cambios en vivo.
+   * El snapshot y el canal usan el mismo ámbito para que un Event nunca
+   * contamine el store de otro.
    */
   useEffect(() => {
-    void refetchSnapshot();
-  }, []);
+    useGraphStore.getState().reset();
+    useFeedStore.getState().clear();
+    usePresenceStore.getState().clear();
+    void refetchSnapshot(eventId);
+
+    return () => {
+      useGraphStore.getState().reset();
+      useFeedStore.getState().clear();
+      usePresenceStore.getState().clear();
+    };
+  }, [eventId]);
 
   const { status, presence } = useChannel<MainEventContent>({
-    channelId: CHANNEL_NETWORK_MAIN,
+    channelId: eventChannel(eventId),
     history: 50,
     onMessage: (msg) => {
       const lastSeq = useGraphStore.getState().lastSeq;
@@ -58,7 +67,7 @@ export function usePortalChannel() {
 
       // Hueco detectado — el backfill de 50 no alcanza, se re-pide el snapshot
       if (seq > lastSeq + 1) {
-        void refetchSnapshot();
+        void refetchSnapshot(eventId);
         return;
       }
 
@@ -103,11 +112,11 @@ export function usePortalChannel() {
   return { status, presence };
 }
 
-async function refetchSnapshot() {
+async function refetchSnapshot(eventId: string) {
   try {
-    const res = await fetch(`${API_URL}/v1/graph`);
-    if (!res.ok) return;
-    const snapshot = await res.json();
+    const snapshot = await apiFetch<GraphSnapshot>(
+      `/v1/graph?eventId=${encodeURIComponent(eventId)}`,
+    );
     useGraphStore.getState().loadSnapshot(snapshot);
   } catch {
     // Will retry on next gap detection

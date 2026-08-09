@@ -164,6 +164,27 @@ export const events = pgTable(
   (t) => [check('events_kind_check', sql`${t.kind} in ('hackathon','project')`)],
 );
 
+/**
+ * Participación persistente en un Event. La identidad de Person es global,
+ * pero el grafo, el feed y la presencia se proyectan desde esta relación.
+ */
+export const eventSubscriptions = pgTable(
+  'event_subscriptions',
+  {
+    eventId: text('event_id')
+      .notNull()
+      .references(() => events.id, { onDelete: 'cascade' }),
+    personId: text('person_id')
+      .notNull()
+      .references(() => people.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.eventId, t.personId] }),
+    index('event_subscriptions_person_idx').on(t.personId),
+  ],
+);
+
 export const ideas = pgTable('ideas', {
   id: text('id')
     .primaryKey()
@@ -270,7 +291,7 @@ export const outbox = pgTable(
 );
 
 /**
- * Marca de agua por canal para el `seq` de GET /v1/graph (ADR-009).
+ * Marca de agua por canal para el `seq` de GET /v1/graph (ADR-017).
  * Se actualiza en cada publicación con éxito; `outbox` solo registra los
  * fallos y por eso no puede sostenerla.
  */

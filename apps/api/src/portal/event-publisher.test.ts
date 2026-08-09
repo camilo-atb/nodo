@@ -20,18 +20,15 @@ class InMemoryOutbox implements OutboxStore {
 const envelope = { type: 'team.updated', payload: {} } as unknown as MainEvent;
 
 describe('EventPublisher — commit → publish (ADR-005)', () => {
-  it('actualiza la marca de agua solo para network-main, tras publicar con éxito', async () => {
+  it('publica cada grafo en el canal y watermark de su Event', async () => {
     const portal = new FakePortalPublisher();
     const watermarks = new InMemoryWatermarks();
-    const outbox = new InMemoryOutbox();
-    const publisher = new EventPublisher(portal, watermarks, outbox);
+    const publisher = new EventPublisher(portal, watermarks, new InMemoryOutbox());
 
-    await publisher.publishMain(envelope);
+    await publisher.publishEvent('ev_hack', envelope);
 
-    expect(portal.published).toHaveLength(1);
-    expect(portal.published[0]?.channel).toBe('network-main');
-    expect(watermarks.seqByChannel.get('network-main')).toBe(1);
-    expect(outbox.queued).toHaveLength(0);
+    expect(portal.published[0]?.channel).toBe('event-ev_hack');
+    expect(watermarks.seqByChannel.get('event-ev_hack')).toBe(1);
   });
 
   it('un sobre de equipo no toca la marca de agua', async () => {
@@ -53,10 +50,10 @@ describe('EventPublisher — commit → publish (ADR-005)', () => {
     const outbox = new InMemoryOutbox();
     const publisher = new EventPublisher(portal, watermarks, outbox);
 
-    await expect(publisher.publishMain(envelope)).resolves.toBeUndefined();
+    await expect(publisher.publishEvent('ev_hack', envelope)).resolves.toBeUndefined();
 
     expect(outbox.queued).toHaveLength(1);
-    expect(outbox.queued[0]?.channel).toBe('network-main');
+    expect(outbox.queued[0]?.channel).toBe('event-ev_hack');
     expect(watermarks.seqByChannel.size).toBe(0);
   });
 });

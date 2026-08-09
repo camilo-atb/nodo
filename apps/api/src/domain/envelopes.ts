@@ -70,7 +70,12 @@ const teamNode = (team: TeamDTO) => ({
   kind: 'team' as const,
   label: team.name,
   status: team.status,
-  meta: { pitch: team.pitch, maxSize: team.maxSize, memberCount: team.members.length },
+  meta: {
+    pitch: team.pitch,
+    maxSize: team.maxSize,
+    memberCount: team.memberCount,
+    eventId: team.eventId,
+  },
 });
 
 const skillEdges = (personId: string, skills: SkillRef[]) =>
@@ -106,7 +111,7 @@ const teamPatch = (team: TeamDTO, removedNeedSlugs: string[] = []): GraphPatch =
   removeEdges: removedNeedSlugs.map((slug) => edgeId('needs', team.id, slug)),
 });
 
-// ─── network-main ───────────────────────────────────────────────────────────
+// ─── event-{eventId} ────────────────────────────────────────────────────────
 
 export const personUpserted = (
   person: PersonDTO,
@@ -159,7 +164,12 @@ export const ideaPublished = (idea: IdeaDTO): MainEvent => ({
     ],
   },
   graph: {
-    nodes: [{ id: idea.id, kind: 'idea', label: idea.title, meta: { summary: idea.summary } }],
+    nodes: [{
+      id: idea.id,
+      kind: 'idea',
+      label: idea.title,
+      meta: { summary: idea.summary, eventId: idea.eventId },
+    }],
     edges: [
       {
         id: edgeId('authored', idea.author.id, idea.id),

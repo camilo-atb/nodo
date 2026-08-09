@@ -1,6 +1,7 @@
 import type { PortalTokenResponse } from '@nodo/contracts';
 import { listPendingApplicationTeamIds } from '../../db/applications-repo.js';
 import { getPersonTeamId } from '../../db/people-repo.js';
+import { listSubscribedEventIds } from '../../db/events-repo.js';
 import { processedEvents } from '../../db/schema.js';
 import { isFromAgent, verifyHmac } from '../../portal/webhook.js';
 import type { AppContext } from '../context.js';
@@ -15,6 +16,7 @@ export const portalRoutes = (ctx: AppContext) => {
     const auth = c.get('auth');
     const memberTeamId = await getPersonTeamId(ctx.db, auth.personId);
     const applicantTeamIds = await listPendingApplicationTeamIds(ctx.db, auth.personId);
+    const events = await listSubscribedEventIds(ctx.db, auth.personId);
 
     const teams: Record<string, 'member' | 'applicant'> = {};
     if (memberTeamId) teams[memberTeamId] = 'member';
@@ -25,6 +27,7 @@ export const portalRoutes = (ctx: AppContext) => {
       handle: auth.handle,
       name: auth.displayName,
       teams,
+      events,
     });
 
     const body: PortalTokenResponse = { token, expiresIn };

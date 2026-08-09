@@ -95,6 +95,7 @@ describe('guardarraíles 3 y 4 — topes con desplazamiento', () => {
       id: 'sug_old',
       personId: 'per_camilo',
       teamId: 'tm_old',
+      eventId: 'ev_open',
       score: 3,
       direction: 'team_needs_person',
       matchedSkills: [goRequired],

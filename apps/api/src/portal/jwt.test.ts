@@ -16,6 +16,7 @@ describe('PortalTokenIssuer + JWKS — mecanismo de ADR-006', () => {
       handle: 'camilo',
       name: 'Camilo',
       teams: { tm_healthai: 'member' },
+      events: ['ev_hack'],
     });
     expect(expiresIn).toBe(900);
 
@@ -27,6 +28,7 @@ describe('PortalTokenIssuer + JWKS — mecanismo de ADR-006', () => {
     expect(payload.sub).toBe('per_camilo');
     expect(payload.handle).toBe('camilo');
     expect(payload.teams).toEqual({ tm_healthai: 'member' });
+    expect(payload.events).toEqual(['ev_hack']);
   });
 
   it('el kid de la cabecera coincide con la entrada del JWKS', async () => {
@@ -42,6 +44,7 @@ describe('PortalTokenIssuer + JWKS — mecanismo de ADR-006', () => {
       handle: 'camilo',
       name: 'Camilo',
       teams: {},
+      events: [],
     });
     const jwks = await buildJwks(privateKeyPem, KID);
     const keySet = createLocalJWKSet(jwks);

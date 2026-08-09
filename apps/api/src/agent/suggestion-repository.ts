@@ -1,12 +1,13 @@
 import type { NeedRef, SuggestionDirection } from '@nodo/contracts';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Db } from '../db/client.js';
-import { edges, suggestions } from '../db/schema.js';
+import { edges, suggestions, teams } from '../db/schema.js';
 
 export type NewSuggestion = {
   id: string;
   personId: string;
   teamId: string;
+  eventId: string;
   score: number;
   direction: SuggestionDirection;
   matchedSkills: NeedRef[];
@@ -22,10 +23,10 @@ export interface SuggestionRepository {
    */
   tryClaim(row: NewSuggestion): Promise<boolean>;
 
-  countLive(filter: { personId: string } | { teamId: string }): Promise<number>;
+  countLive(filter: ({ personId: string } | { teamId: string }) & { eventId?: string }): Promise<number>;
 
   /** La sugerencia viva de menor score, para desplazar (guardarraíles 3 y 4). */
-  lowestLive(filter: { personId: string } | { teamId: string }): Promise<{ id: string } | undefined>;
+  lowestLive(filter: ({ personId: string } | { teamId: string }) & { eventId?: string }): Promise<{ id: string } | undefined>;
 
   /** Desplazamiento o caducidad: pasa a `expired`. La fila no se borra. */
   expire(id: string): Promise<void>;
@@ -83,25 +84,37 @@ export class DrizzleSuggestionRepository implements SuggestionRepository {
     });
   }
 
-  async countLive(filter: { personId: string } | { teamId: string }): Promise<number> {
+  async countLive(
+    filter: ({ personId: string } | { teamId: string }) & { eventId?: string },
+  ): Promise<number> {
     const column = 'personId' in filter ? suggestions.personId : suggestions.teamId;
     const value = 'personId' in filter ? filter.personId : filter.teamId;
     const [row] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(suggestions)
-      .where(and(eq(column, value), eq(suggestions.status, 'live')));
+      .innerJoin(teams, eq(teams.id, suggestions.teamId))
+      .where(and(
+        eq(column, value),
+        eq(suggestions.status, 'live'),
+        ...('eventId' in filter && filter.eventId ? [eq(teams.eventId, filter.eventId)] : []),
+      ));
     return row?.count ?? 0;
   }
 
   async lowestLive(
-    filter: { personId: string } | { teamId: string },
+    filter: ({ personId: string } | { teamId: string }) & { eventId?: string },
   ): Promise<{ id: string } | undefined> {
     const column = 'personId' in filter ? suggestions.personId : suggestions.teamId;
     const value = 'personId' in filter ? filter.personId : filter.teamId;
     const [row] = await this.db
       .select({ id: suggestions.id })
       .from(suggestions)
-      .where(and(eq(column, value), eq(suggestions.status, 'live')))
+      .innerJoin(teams, eq(teams.id, suggestions.teamId))
+      .where(and(
+        eq(column, value),
+        eq(suggestions.status, 'live'),
+        ...(filter.eventId ? [eq(teams.eventId, filter.eventId)] : []),
+      ))
       .orderBy(asc(suggestions.score))
       .limit(1);
     return row;
@@ -122,6 +135,15 @@ export class DrizzleSuggestionRepository implements SuggestionRepository {
   }
 }
 
+export const findSuggestionEventId = async (db: Db, id: string): Promise<string | undefined> => {
+  const [row] = await db
+    .select({ eventId: teams.eventId })
+    .from(suggestions)
+    .innerJoin(teams, eq(teams.id, suggestions.teamId))
+    .where(eq(suggestions.id, id));
+  return row?.eventId;
+};
+
 /** Doble de pruebas, sin Postgres: reproduce el guardarraíl 1 en memoria. */
 export class FakeSuggestionRepository implements SuggestionRepository {
   readonly rows = new Map<string, NewSuggestion & { status: 'live' | 'expired' }>();
@@ -135,22 +157,24 @@ export class FakeSuggestionRepository implements SuggestionRepository {
     return true;
   }
 
-  async countLive(filter: { personId: string } | { teamId: string }): Promise<number> {
+  async countLive(filter: ({ personId: string } | { teamId: string }) & { eventId?: string }): Promise<number> {
     return [...this.rows.values()].filter(
       (r) =>
         r.status === 'live' &&
-        ('personId' in filter ? r.personId === filter.personId : r.teamId === filter.teamId),
+        ('personId' in filter ? r.personId === filter.personId : r.teamId === filter.teamId) &&
+        (!filter.eventId || r.eventId === filter.eventId),
     ).length;
   }
 
   async lowestLive(
-    filter: { personId: string } | { teamId: string },
+    filter: ({ personId: string } | { teamId: string }) & { eventId?: string },
   ): Promise<{ id: string } | undefined> {
     const live = [...this.rows.entries()]
       .filter(
         ([, r]) =>
           r.status === 'live' &&
-          ('personId' in filter ? r.personId === filter.personId : r.teamId === filter.teamId),
+          ('personId' in filter ? r.personId === filter.personId : r.teamId === filter.teamId) &&
+          (!filter.eventId || r.eventId === filter.eventId),
       )
       .sort((a, b) => a[1].score - b[1].score);
     return live[0] ? { id: live[0][0] } : undefined;

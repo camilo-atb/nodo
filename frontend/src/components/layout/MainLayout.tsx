@@ -8,16 +8,16 @@ import { usePortalChannel } from '@/hooks/usePortalChannel';
 
 export type MainTab = 'marketplace' | 'graph' | 'activity';
 
-export function MainLayout() {
+export function MainLayout({ eventId }: { eventId: string }) {
   const [activeTab, setActiveTab] = useState<MainTab>('marketplace');
 
   /**
-   * Montar este hook **es** la suscripción a `network-main`: el SDK de Portal
+   * Montar este hook **es** la suscripción a `event-{eventId}`: el SDK de Portal
    * no tiene un `.subscribe()` aparte, la conexión se abre al montar
    * `useChannel` (docs-frontend/PORTAL-API-REAL). También dispara la carga
    * inicial del grafo.
    */
-  usePortalChannel();
+  usePortalChannel(eventId);
 
   return (
     <>

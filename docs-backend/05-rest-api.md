@@ -50,7 +50,7 @@ Emite un `sessionToken` nuevo y anula el anterior. La ruta va sin autenticar y e
 ```http
 POST /v1/portal/token          [auth]
 ```
-Emite el JWT de Portal. **Vida: 15 min.** Incluye el claim `teams` (`{ [teamId]: 'member'|'applicant' }`) que consume `authz`.
+Emite el JWT de Portal. Incluye los claims `teams` (`{ [teamId]: 'member'|'applicant' }`) y `events` (`eventId[]`) que consume `authz`.
 → `200 { token, expiresIn: 900 }`
 
 > El cliente debe llamar a esto desde un callback `async` del SDK, nunca guardar el string. Ver [03](03-portal-contract.md).
@@ -58,14 +58,14 @@ Emite el JWT de Portal. **Vida: 15 min.** Incluye el claim `teams` (`{ [teamId]:
 ### Grafo
 
 ```http
-GET /v1/graph
+GET /v1/graph?eventId=:eventId   [auth]
 ```
-Snapshot completo. Público y sin autenticación: el grafo es información abierta de la red.
+Snapshot privado del Event. Exige una suscripción persistente de la Person autenticada.
 → `200 { nodes: GraphNode[], edges: GraphEdge[], seq: number }`
 
 `seq` es la marca de agua de Portal en el momento del snapshot. El cliente descarta los sobres con `seq` menor o igual.
 
-**De dónde sale ese `seq`:** cada `POST /v1/channels/{id}/messages` a Portal responde `200 { id, seq, timestamp }`. Tras cada publicación con éxito el backend hace `upsert` de la marca en `channel_watermarks`, y aquí devuelve la de `network-main` ([ADR-009](01-decisions.md#adr-009--la-marca-de-agua-seq-es-la-de-network-main)). No hay forma de "preguntarle" el `seq` actual a Portal: se conoce porque somos el único publicador ([ADR-005](01-decisions.md)). En un entorno recién sembrado, sin publicaciones, devuelve `seq: 0` y el cliente acepta todos los sobres — correcto, porque el snapshot ya trae el estado completo y los parches son idempotentes.
+**De dónde sale ese `seq`:** cada publicación a Portal devuelve su secuencia. Tras publicar, el backend actualiza `channel_watermarks` para `event-{eventId}`. Cada Event reconcilia exclusivamente contra su propia marca ([ADR-017](01-decisions.md#adr-017--el-event-es-el-límite-del-grafo-y-del-tiempo-real)).
 
 **El handler lee la marca antes que el grafo.** El orden inverso abre una ventana en la que un sobre publicado entre ambas lecturas queda fuera del snapshot y por debajo del `seq`, así que el cliente lo descarta y pierde ese cambio hasta la siguiente reconexión.
 
@@ -164,11 +164,13 @@ Publica `team.member_joined` en `network-main` y `application.resolved` en `team
 POST /v1/events                [auth]   { name, description?, kind, tags?, startsAt?, endsAt? }
 GET  /v1/events                         ?kind=hackathon
 GET  /v1/events/:id
+GET  /v1/events/:id/subscription       [auth]
+POST /v1/events/:id/subscription       [auth]
 ```
 
 Todo Team y toda Idea pertenece a un Event ([ADR-013](01-decisions.md#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto)). `eventId` entra como campo **opcional** en `POST /v1/teams` y `POST /v1/ideas`: si falta, cae al espacio abierto que siembra `db:seed`. Por eso la clave foránea puede ser obligatoria sin romper a ningún cliente existente.
 
-`GET /v1/graph` acepta `?eventId=` para acotar el snapshot. Sin el parámetro devuelve la red entera, como hasta ahora.
+La suscripción es idempotente y persistente. `GET /v1/graph` exige `eventId`; no existe una variante que devuelva la red entera.
 
 ### Tablero y reto
 

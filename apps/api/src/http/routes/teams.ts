@@ -20,6 +20,7 @@ import {
   updateTeam,
 } from '../../db/teams-repo.js';
 import { errors } from '../../domain/errors.js';
+import { isSubscribedToEvent } from '../../db/events-repo.js';
 import { teamNeedChanged, teamUpdated, teamCreated, personActor } from '../../domain/envelopes.js';
 import { teamId as newTeamId } from '../../domain/ids.js';
 import { assertKnownSkills, assertPersonNotInTeam } from '../../domain/invariants.js';
@@ -46,6 +47,10 @@ export const teamsRoutes = (ctx: AppContext) => {
     const parsed = CreateTeamRequest.safeParse(await c.req.json().catch(() => ({})));
     if (!parsed.success) throw errors.validation(parsed.error.issues);
     const input = parsed.data;
+    const eventId = input.eventId ?? DEFAULT_EVENT_ID;
+    if (!(await isSubscribedToEvent(ctx.db, eventId, auth.personId))) {
+      throw errors.forbidden('Debes suscribirte al evento antes de crear un equipo.');
+    }
 
     const needs = resolveNeeds(ctx, input.needs);
     const id = newTeamId();
@@ -56,13 +61,13 @@ export const teamsRoutes = (ctx: AppContext) => {
       pitch: input.pitch ?? null,
       leadId: auth.personId,
       ideaId: input.ideaId ?? null,
-      eventId: input.eventId ?? DEFAULT_EVENT_ID,
+      eventId,
       maxSize: input.maxSize ?? DEFAULT_TEAM_SIZE,
       needs,
     });
 
     const team = (await loadTeamDTO(ctx.db, id))!;
-    await ctx.publisher.publishMain(teamCreated(team));
+    await ctx.publisher.publishEvent(team.eventId, teamCreated(team));
     triggerTeamNeedsPerson(ctx.db, ctx.matchmaker, ctx.scheduler, id, 'team.created');
 
     const body: TeamResponse = { team };
@@ -88,7 +93,7 @@ export const teamsRoutes = (ctx: AppContext) => {
     await deriveAndPersistTeamStatus(ctx.db, id, input.frozen ?? row.frozen);
 
     const team = (await loadTeamDTO(ctx.db, id))!;
-    await ctx.publisher.publishMain(teamUpdated(team, personActor({ id: auth.personId, handle: auth.handle, displayName: auth.displayName })));
+    await ctx.publisher.publishEvent(team.eventId, teamUpdated(team, personActor({ id: auth.personId, handle: auth.handle, displayName: auth.displayName })));
 
     const body: TeamResponse = { team };
     return c.json(body);
@@ -110,7 +115,7 @@ export const teamsRoutes = (ctx: AppContext) => {
 
     const team = (await loadTeamDTO(ctx.db, id))!;
     const actor = personActor({ id: auth.personId, handle: auth.handle, displayName: auth.displayName });
-    await ctx.publisher.publishMain(teamUpdated(team, actor, removedSlugs));
+    await ctx.publisher.publishEvent(team.eventId, teamUpdated(team, actor, removedSlugs));
     await ctx.publisher.publishTeam(id, teamNeedChanged(team, actor));
 
     triggerTeamNeedsPerson(ctx.db, ctx.matchmaker, ctx.scheduler, id, 'team.updated');

@@ -3,68 +3,33 @@ import config from './portal.config.js';
 
 const channel = (id: string, key: string) => ({ id, key, mode: 'standard' as const });
 
+describe('portal.config.ts — event-*', () => {
+  const event = config.channels!['event-*']!;
+
+  it('admite únicamente a una Person suscrita al Event del canal', () => {
+    const allowed = event.authz!({
+      claims: { userId: 'per_camilo', anon: false, events: ['ev_hack'] },
+      channel: channel('event-ev_hack', 'event-*'),
+    });
+    const blocked = event.authz!({
+      claims: { userId: 'per_camilo', anon: false, events: ['ev_other'] },
+      channel: channel('event-ev_hack', 'event-*'),
+    });
+
+    expect(allowed).toMatchObject({ action: 'allow', capabilities: { publish: false } });
+    expect(blocked).toMatchObject({ action: 'block' });
+  });
+});
+
 describe('portal.config.ts — network-main', () => {
   const main = config.channels!['network-main']!;
 
-  it('bloquea a un usuario anónimo', () => {
-    const result = main.authz!({
-      claims: { userId: '', anon: true },
-      channel: channel('network-main', 'network-main'),
-    });
-    expect(result).toMatchObject({ action: 'block' });
-  });
-
-  it('admite a un usuario identificado sin permiso de publicar', () => {
+  it('bloquea incluso a usuarios identificados porque es un canal legado global', () => {
     const result = main.authz!({
       claims: { userId: 'per_camilo', anon: false },
       channel: channel('network-main', 'network-main'),
     });
-    expect(result).toMatchObject({ action: 'allow', capabilities: { publish: false, sendDirect: false } });
-  });
-
-  it('notify convierte match.suggested en InboxItem con teamName y personId', async () => {
-    const descriptor = await main.notify!({
-      message: {
-        id: 'evt_1',
-        type: 'match.suggested',
-        content: {
-          suggestion: {
-            id: 'sug_1',
-            personId: 'per_camilo',
-            personName: 'Camilo',
-            teamId: 'tm_healthai',
-            teamName: 'Health AI',
-            score: 5,
-            direction: 'team_needs_person',
-            matchedSkills: [],
-            rationale: 'Camilo sabe Go.',
-            expiresAt: 0,
-            createdAt: 0,
-          },
-        },
-        kind: 'text',
-        timestamp: Date.now(),
-        ephemeral: false,
-      },
-      sender: { id: 'agent:matchmaker', anon: false, claims: {} },
-    });
-
-    expect(descriptor).toMatchObject({ title: 'Encaje con Health AI', to: ['per_camilo'] });
-  });
-
-  it('notify devuelve null para tipos que no notifican', async () => {
-    const descriptor = await main.notify!({
-      message: {
-        id: 'evt_2',
-        type: 'team.created',
-        content: {},
-        kind: 'text',
-        timestamp: Date.now(),
-        ephemeral: false,
-      },
-      sender: { id: 'per_laura', anon: false, claims: {} },
-    });
-    expect(descriptor).toBeNull();
+    expect(result).toMatchObject({ action: 'block' });
   });
 });
 

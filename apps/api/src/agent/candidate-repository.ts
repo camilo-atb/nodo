@@ -7,6 +7,7 @@ export type Candidate = {
   label: string;
   score: number;
   matchedSkills: NeedRef[];
+  eventId?: string;
 };
 
 /**
@@ -20,13 +21,14 @@ export interface CandidateRepository {
   forPerson(personId: string, threshold: number): Promise<Candidate[]>;
 }
 
-type CandidateRow = { id: string; label: string; score: number | string; matched_skills: unknown };
+type CandidateRow = { id: string; label: string; score: number | string; matched_skills: unknown; event_id: string };
 
 const toCandidate = (row: CandidateRow): Candidate => ({
   id: row.id,
   label: row.label,
   score: typeof row.score === 'string' ? Number(row.score) : row.score,
   matchedSkills: row.matched_skills as NeedRef[],
+  eventId: row.event_id,
 });
 
 /**
@@ -45,6 +47,7 @@ export class DrizzleCandidateRepository implements CandidateRepository {
           p.id,
           p.label,
           p.created_at,
+          target_team.event_id,
             sum(case when e_need.meta->>'priority' = 'required' then 2 else 1 end)
           + (case when pe.availability = 'full' then 1 else 0 end)
           + (case when pe.language     = ${teamLanguage} then 1 else 0 end)   as score,
@@ -59,6 +62,9 @@ export class DrizzleCandidateRepository implements CandidateRepository {
                            and e_skill.to_id = e_need.to_id
         join nodes  p       on p.id   = e_skill.from_id
         join people pe      on pe.id  = p.id
+        join teams target_team on target_team.id = ${teamId}
+        join event_subscriptions es on es.person_id = p.id
+                                   and es.event_id = target_team.event_id
         join skills s       on s.slug = e_need.to_id
         where e_need.kind    = 'needs'
           and e_need.from_id = ${teamId}
@@ -68,7 +74,7 @@ export class DrizzleCandidateRepository implements CandidateRepository {
             select 1 from edges m
              where m.kind = 'member_of' and m.from_id = p.id
           )
-        group by p.id, p.label, p.created_at, pe.availability, pe.language
+        group by p.id, p.label, p.created_at, pe.availability, pe.language, target_team.event_id
       ) c
       where c.score >= ${threshold}
       order by c.score desc, c.created_at asc
@@ -83,6 +89,7 @@ export class DrizzleCandidateRepository implements CandidateRepository {
         select
           t.id,
           t.label,
+          te.event_id,
             sum(case when e_need.meta->>'priority' = 'required' then 2 else 1 end)
           + (case when me.availability = 'full'        then 1 else 0 end)
           + (case when me.language     = lead.language  then 1 else 0 end)   as score,
@@ -99,12 +106,14 @@ export class DrizzleCandidateRepository implements CandidateRepository {
         join teams  te     on te.id  = t.id
         join people lead   on lead.id = te.lead_id
         join people me     on me.id  = ${personId}
+        join event_subscriptions es on es.person_id = ${personId}
+                                   and es.event_id = te.event_id
         join skills s      on s.slug = e_need.to_id
         where e_skill.kind    = 'has_skill'
           and e_skill.from_id = ${personId}
           and t.kind          = 'team'
           and t.status in ('recruiting','almost_full')
-        group by t.id, t.label, me.availability, me.language, lead.language
+        group by t.id, t.label, te.event_id, me.availability, me.language, lead.language
       ) c
       where c.score >= ${threshold}
       order by c.score desc

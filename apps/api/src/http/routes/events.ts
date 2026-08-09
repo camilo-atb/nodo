@@ -2,10 +2,20 @@ import {
   CreateEventRequest,
   EventKind,
   type EventDTO,
+  type EventSubscriptionResponse,
   type EventsResponse,
 } from '@nodo/contracts';
-import { createEvent, findEvent, listEvents } from '../../db/events-repo.js';
+import {
+  createEvent,
+  findEvent,
+  isSubscribedToEvent,
+  listEvents,
+  subscribeToEvent,
+} from '../../db/events-repo.js';
+import { getPersonSkills, loadPersonDTO } from '../../db/people-repo.js';
+import { triggerPersonSeeksTeam } from '../../agent/triggers.js';
 import { errors } from '../../domain/errors.js';
+import { personUpserted } from '../../domain/envelopes.js';
 import { nodoEventId } from '../../domain/ids.js';
 import type { AppContext } from '../context.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -22,7 +32,7 @@ import { createRouter } from '../types.js';
 export const eventsRoutes = (ctx: AppContext) => {
   const router = createRouter();
 
-  /** Público, como `GET /v1/graph`: los contenedores son información abierta. */
+  /** El catálogo es público; el grafo interno de cada Event no lo es. */
   router.get('/v1/events', async (c) => {
     const raw = c.req.query('kind');
     const kind = raw === undefined ? undefined : EventKind.safeParse(raw);
@@ -36,6 +46,30 @@ export const eventsRoutes = (ctx: AppContext) => {
     const found = await findEvent(ctx.db, c.req.param('id'));
     if (!found) throw errors.notFound('El evento no existe.');
     return c.json(found satisfies EventDTO);
+  });
+
+  router.get('/v1/events/:id/subscription', requireAuth(ctx), async (c) => {
+    const eventId = c.req.param('id');
+    if (!(await findEvent(ctx.db, eventId))) throw errors.notFound('El evento no existe.');
+    const subscribed = await isSubscribedToEvent(ctx.db, eventId, c.get('auth').personId);
+    return c.json({ subscribed } satisfies EventSubscriptionResponse);
+  });
+
+  router.post('/v1/events/:id/subscription', requireAuth(ctx), async (c) => {
+    const eventId = c.req.param('id');
+    if (!(await findEvent(ctx.db, eventId))) throw errors.notFound('El evento no existe.');
+
+    const personId = c.get('auth').personId;
+    const created = await subscribeToEvent(ctx.db, eventId, personId);
+    if (created) {
+      const person = (await loadPersonDTO(ctx.db, personId))!;
+      await ctx.publisher.publishEvent(
+        eventId,
+        personUpserted(person, await getPersonSkills(ctx.db, personId)),
+      );
+      triggerPersonSeeksTeam(ctx.db, ctx.matchmaker, ctx.scheduler, personId, 'event.subscribed');
+    }
+    return c.json({ subscribed: true } satisfies EventSubscriptionResponse, created ? 201 : 200);
   });
 
   router.post('/v1/events', requireAuth(ctx), async (c) => {

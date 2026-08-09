@@ -443,3 +443,20 @@ type TeamEnvelope<T extends string, P> = Envelope<T, P> & { graph?: never };
 - **El tiempo real funciona en `localhost`**, que era el objetivo.
 
 **Lo que NO cambia.** ADR-006 sigue vigente en todo lo demás: identidad sin contraseñas, `sessionToken` opaco en `localStorage`, código de recuperación, y que la identidad es suplantable como deuda declarada.
+
+---
+
+## ADR-017 — El Event es el límite del grafo y del tiempo real
+
+**Estado:** cerrada · **supersede [ADR-009](#adr-009--la-marca-de-agua-seq-es-la-de-network-main)** y la consecuencia de [ADR-013](#adr-013--space-es-el-contenedor-obligatorio-con-un-espacio-abierto-por-defecto) que mantenía un canal global
+
+**Decisión.** Una Person participa en un Event mediante una suscripción persistente y puede tener varias simultáneas. Cada Event tiene su propia proyección de grafo, feed, presencia, canal `event-{eventId}` y marca de agua. Snapshot y canal solo son accesibles para suscriptores. `network-main` queda bloqueado, incluso para identidades válidas.
+
+**Consecuencias.**
+- `event_subscriptions(event_id, person_id)` define quién aparece y quién puede conectarse.
+- `GET /v1/graph?eventId=...` exige sesión y suscripción; ya no existe snapshot global público.
+- Person conserva una identidad global, pero solo aparece en la proyección de los Events a los que está suscrita.
+- Skills y Agents siguen siendo conceptos globales, aunque viajan dentro de snapshots y canales independientes; una arista solo se incluye si ambos extremos pertenecen a la proyección.
+- Teams, Ideas, Applications y Suggestions se publican y calculan dentro del Event correspondiente. El MatchMaker no compara participantes de Events distintos.
+- El claim `events` del JWT de Portal autoriza `event-*` sin consultar la base de datos.
+- `participantCount` cuenta suscripciones, no equipos.

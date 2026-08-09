@@ -1,7 +1,7 @@
 import type { GraphEdge, GraphNode } from '@nodo/contracts';
-import { isNull, gt, or, sql } from 'drizzle-orm';
+import { eq, isNull, gt, or, sql } from 'drizzle-orm';
 import type { Db } from './client.js';
-import { edges, nodes, channelWatermarks } from './schema.js';
+import { edges, eventSubscriptions, nodes, channelWatermarks } from './schema.js';
 
 /**
  * `GET /v1/graph`: dos consultas y cero ensamblaje (docs/04). `nodes` y
@@ -16,19 +16,22 @@ import { edges, nodes, channelWatermarks } from './schema.js';
  * hacerlo en SQL obligaría a indexar dentro del `jsonb` para ahorrar una
  * operación que ya es de milisegundos.
  *
- * Los nodos **sin** `eventId` —personas, skills, el agente— nunca se filtran:
- * no pertenecen a ningún contenedor, participan en todos. Y las aristas se
- * recortan a las que siguen teniendo sus dos extremos visibles, o el cliente
- * recibiría aristas colgando de nodos que no le llegaron.
+ * Person se incluye únicamente si tiene una suscripción persistente al Event.
+ * Skills y Agents son conceptos globales, pero cada snapshot es independiente.
+ * Las aristas se recortan a las que conservan ambos extremos visibles.
  */
 export const filterByEvent = (
   graph: { nodes: GraphNode[]; edges: GraphEdge[] },
   eventId?: string,
+  participantIds: ReadonlySet<string> = new Set(),
 ): { nodes: GraphNode[]; edges: GraphEdge[] } => {
   if (!eventId) return graph;
 
   const nodes = graph.nodes.filter((n) => {
     const owner = n.meta?.['eventId'];
+    if (n.kind === 'person') return participantIds.has(n.id);
+    // Skills y Agents son conceptos globales, pero viajan en una proyección
+    // independiente y solo conservan aristas cuyos otros extremos son visibles.
     return owner === undefined || owner === eventId;
   });
   const visible = new Set(nodes.map((n) => n.id));
@@ -78,18 +81,24 @@ export const getGraphSnapshot = async (
     })),
   };
 
-  return filterByEvent(all, eventId);
+  if (!eventId) return all;
+  const subscriptions = await db
+    .select({ personId: eventSubscriptions.personId })
+    .from(eventSubscriptions)
+    .where(eq(eventSubscriptions.eventId, eventId));
+  return filterByEvent(all, eventId, new Set(subscriptions.map((row) => row.personId)));
 };
 
 /**
- * `seq` es exclusivamente el de `network-main` (ADR-009). Se lee **antes**
+ * `seq` es el de `event-{eventId}` (ADR-017). Se lee **antes**
  * que el grafo: el peor caso es reaplicar un parche que el snapshot ya
  * incluía, y el upsert por `id` es idempotente.
  */
-export const getMainWatermark = async (db: Db): Promise<number> => {
+export const getEventWatermark = async (db: Db, eventId: string): Promise<number> => {
+  const channel = `event-${eventId}`;
   const [row] = await db
     .select({ seq: channelWatermarks.seq })
     .from(channelWatermarks)
-    .where(sql`${channelWatermarks.channel} = 'network-main'`);
+    .where(eq(channelWatermarks.channel, channel));
   return row?.seq ?? 0;
 };
