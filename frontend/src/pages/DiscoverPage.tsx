@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
-import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
+import { useEventStore, type NodoEvent } from '@/stores/eventStore';
 import { CreateEventModal } from '@/components/discover/CreateEventModal';
 import type { EventSubscriptionResponse } from '@nodo/contracts';
 import { fetchPortalToken, portal } from '@/lib/portal';
@@ -25,18 +25,6 @@ const MOCK_EVENTS: NodoEvent[] = [
     createdAt: Date.now(),
   },
   {
-    id: 'mock-2',
-    name: 'nodo/health-ai-platform',
-    description:
-      'Open source platform for AI-assisted triage in rural clinics. Looking for contributors with ML and React experience.',
-    kind: 'project',
-    tags: ['AI', 'Healthcare', 'TypeScript', 'Open Source'],
-    startsAt: null,
-    endsAt: null,
-    participantCount: 12,
-    createdAt: Date.now(),
-  },
-  {
     id: 'mock-3',
     name: 'Developer Tools Hackathon',
     description:
@@ -48,24 +36,6 @@ const MOCK_EVENTS: NodoEvent[] = [
     participantCount: 65,
     createdAt: Date.now(),
   },
-];
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type FilterValue = EventType | 'all';
-
-interface FilterDef {
-  value: FilterValue;
-  label: string;
-  dot?: string; // color for the dot indicator
-}
-
-const FILTERS: FilterDef[] = [
-  { value: 'all', label: 'All' },
-  { value: 'hackathon', label: 'Hackathons', dot: '#12c7e5' },
-  { value: 'project', label: 'Projects', dot: '#21d69a' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -244,7 +214,7 @@ function Hero() {
 
       {/* Description */}
       <p className="mt-5 text-sm md:text-base text-gray-500 dark:text-[#9da6b1] max-w-xl">
-        Discover hackathons, open-source projects and people to build with.
+        Discover hackathons and find the right people to build with.
       </p>
     </section>
   );
@@ -282,47 +252,6 @@ function SearchBar({
           ⌘K
         </kbd>
       </div>
-    </div>
-  );
-}
-
-function FilterBar({
-  active,
-  onChange,
-  counts,
-}: {
-  active: FilterValue;
-  onChange: (v: FilterValue) => void;
-  counts: Record<FilterValue, number>;
-}) {
-  return (
-    <div className="flex gap-2 mt-3 overflow-x-auto pb-1 -mb-1">
-      {FILTERS.map((f) => {
-        const isActive = active === f.value;
-        return (
-          <button
-            key={f.value}
-            onClick={() => onChange(f.value)}
-            className={`shrink-0 flex items-center gap-1.5 h-9 px-3 rounded-lg border text-xs font-semibold transition-all duration-200
-              ${
-                isActive
-                  ? 'bg-[#111318] text-white border-[#111318] dark:bg-white dark:text-[#07090c] dark:border-white'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 dark:bg-[#101317] dark:text-[#9da6b1] dark:border-[#20262d] dark:hover:border-[#252b32]'
-              }`}
-          >
-            {f.dot && (
-              <span
-                className="inline-block w-[6px] h-[6px] rounded-full"
-                style={{ backgroundColor: f.dot }}
-              />
-            )}
-            <span>{f.label}</span>
-            <span className={`${isActive ? 'opacity-70' : 'opacity-50'}`}>
-              {counts[f.value]}
-            </span>
-          </button>
-        );
-      })}
     </div>
   );
 }
@@ -467,132 +396,6 @@ function HackathonCard({ event }: { event: NodoEvent }) {
   );
 }
 
-function ProjectCard({ event }: { event: NodoEvent }) {
-  const navigate = useNavigate();
-  const sessionToken = useSessionStore((s) => s.sessionToken);
-  const [subscribing, setSubscribing] = useState(false);
-
-  async function handleSubscribe(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!sessionToken) {
-      navigate(`/event/${event.id}`);
-      return;
-    }
-    setSubscribing(true);
-    try {
-      await apiFetch<EventSubscriptionResponse>(`/v1/events/${event.id}/subscription`, {
-        method: 'POST',
-      });
-      portal.setToken(fetchPortalToken);
-      navigate(`/event/${event.id}`);
-    } catch {
-      navigate(`/event/${event.id}`);
-    }
-    setSubscribing(false);
-  }
-
-  return (
-    <article
-      onClick={() => navigate(`/event/${event.id}`)}
-      className="group cursor-pointer min-h-[350px] flex flex-col rounded-2xl border p-5 transition-all duration-200
-        bg-white border-gray-200 shadow-sm hover:-translate-y-1 hover:shadow-xl
-        dark:bg-[#101317] dark:border-[#20262d] dark:hover:border-[#252b32]"
-    >
-      {/* Top: badge */}
-      <div className="flex items-center justify-between mb-4">
-        <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md bg-[#21d69a]/10 text-[9px] font-extrabold tracking-[0.8px] text-[#21d69a] uppercase">
-          ◉ PROJECT
-        </span>
-        {event.participantCount > 0 && (
-          <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#21d69a]">
-            <span className="inline-block w-[6px] h-[6px] rounded-full bg-[#21d69a]" />
-            {event.participantCount} contributors
-          </span>
-        )}
-      </div>
-
-      {/* Project identifier */}
-      <div className="flex items-center gap-3 mb-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-[#15191e] border border-gray-200 dark:border-[#20262d]">
-          <svg className="w-4 h-4 text-[#21d69a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-          </svg>
-        </div>
-        <span className="text-base font-bold font-mono text-[#111318] dark:text-[#f4f6f8] truncate">
-          {event.name}
-        </span>
-      </div>
-
-      {/* Description */}
-      <p className="text-[13px] text-gray-500 dark:text-[#9da6b1] line-clamp-2 mb-3">
-        {event.description}
-      </p>
-
-      {/* Metadata */}
-      <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-[#68717d]">
-        <span className="flex items-center gap-1">
-          <PersonIcon />
-          {event.participantCount} contributors
-        </span>
-      </div>
-
-      {/* Tags */}
-      {event.tags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {event.tags.map((tag) => (
-            <span
-              key={tag}
-              className="text-[10px] px-2 py-1 rounded-md border
-                bg-gray-50 border-gray-200 text-gray-500
-                dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#9da6b1]"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="mt-auto pt-4 border-t border-gray-100 dark:border-[#20262d] flex items-center justify-between">
-        {/* Contributor info */}
-        <div className="flex items-center">
-          {event.participantCount > 0 ? (
-            <>
-              <div className="flex -space-x-1">
-                {Array.from({ length: Math.min(event.participantCount, 3) }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-7 h-7 rounded-full border-2 border-white dark:border-[#101317] bg-gray-200 dark:bg-[#20262d]"
-                  />
-                ))}
-              </div>
-              {event.participantCount > 3 && (
-                <span className="ml-2 text-[11px] text-gray-400 dark:text-[#68717d]">
-                  +{event.participantCount - 3} contributors
-                </span>
-              )}
-            </>
-          ) : (
-            <span className="text-[11px] text-gray-400 dark:text-[#68717d]">
-              Looking for contributors
-            </span>
-          )}
-        </div>
-
-        {/* Subscribe button */}
-        <button
-          onClick={handleSubscribe}
-          disabled={subscribing}
-          className="h-8 px-3 rounded-lg text-[11px] font-bold transition-colors duration-200 disabled:opacity-50
-            bg-[#21d69a] text-[#00261a] hover:bg-[#1bc48b]"
-        >
-          {subscribing ? 'Joining...' : 'Contribute'}
-        </button>
-      </div>
-    </article>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -601,7 +404,6 @@ export function DiscoverPage() {
   const { events, setEvents } = useEventStore();
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<FilterValue>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const isDark = useIsDark();
 
@@ -621,20 +423,8 @@ export function DiscoverPage() {
 
   const filtered = events.filter((e) => {
     const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
-    const matchesType = typeFilter === 'all' || e.kind === typeFilter;
-    return matchesSearch && matchesType;
+    return matchesSearch && e.kind === 'hackathon';
   });
-
-  const getCounts = useCallback((): Record<FilterValue, number> => {
-    const searchFiltered = events.filter((e) =>
-      e.name.toLowerCase().includes(search.toLowerCase()),
-    );
-    return {
-      all: searchFiltered.length,
-      hackathon: searchFiltered.filter((e) => e.kind === 'hackathon').length,
-      project: searchFiltered.filter((e) => e.kind === 'project').length,
-    };
-  }, [events, search]);
 
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-[#111318] dark:bg-[#07090c] dark:text-[#f4f6f8]">
@@ -643,10 +433,9 @@ export function DiscoverPage() {
       <main className="mx-auto w-[calc(100%-28px)] max-w-[1120px] md:w-[calc(100%-40px)] pt-12 md:pt-[72px] pb-24">
         <Hero />
 
-        {/* Search + Filters */}
+        {/* Search */}
         <section className="mb-8">
           <SearchBar value={search} onChange={setSearch} />
-          <FilterBar active={typeFilter} onChange={setTypeFilter} counts={getCounts()} />
         </section>
 
         {/* Results header */}
@@ -673,13 +462,9 @@ export function DiscoverPage() {
           </div>
         ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {filtered.map((event) =>
-              event.kind === 'hackathon' ? (
-                <HackathonCard key={event.id} event={event} />
-              ) : (
-                <ProjectCard key={event.id} event={event} />
-              ),
-            )}
+            {filtered.map((event) => (
+              <HackathonCard key={event.id} event={event} />
+            ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20">

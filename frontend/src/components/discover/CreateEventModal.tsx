@@ -2,23 +2,17 @@ import { useState } from 'react';
 import { Modal } from '@/components/base/Modal';
 import { Button } from '@/components/base/Button';
 import { apiFetch } from '@/lib/api';
-import { useEventStore, type NodoEvent, type EventType } from '@/stores/eventStore';
+import { useEventStore, type NodoEvent } from '@/stores/eventStore';
 
 interface CreateEventModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-const EVENT_TYPES: { value: EventType; label: string }[] = [
-  { value: 'hackathon', label: 'Hackathon' },
-  { value: 'project', label: 'Project' },
-];
-
 export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
   const addEvent = useEventStore((s) => s.addEvent);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<EventType>('hackathon');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -33,8 +27,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
         body: JSON.stringify({
           name,
           description,
-          kind: type,
-          // Epoch ms, nunca ISO string: es la convención del contrato (docs/09).
+          kind: 'hackathon',
           startsAt: startDate ? new Date(startDate).getTime() : null,
           endsAt: endDate ? new Date(endDate).getTime() : null,
         }),
@@ -42,7 +35,7 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
       addEvent(created);
       onClose();
     } catch {
-      // Best-effort — for demo, event creation may not have backend yet
+      // Best-effort
     } finally {
       setSubmitting(false);
     }
@@ -52,11 +45,11 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
     'w-full rounded-xl border px-3 py-2.5 text-sm outline-none transition-colors bg-white border-gray-200 text-[#111318] placeholder:text-gray-400 focus:border-[#12c7e5] focus:ring-4 focus:ring-[#12c7e5]/10 dark:bg-[#101317] dark:border-[#20262d] dark:text-[#f4f6f8] dark:placeholder:text-[#68717d]';
 
   return (
-    <Modal open={open} onClose={onClose} title="Create Opportunity">
+    <Modal open={open} onClose={onClose} title="Create Hackathon">
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
           type="text"
-          placeholder="Name"
+          placeholder="Hackathon name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
@@ -70,18 +63,6 @@ export function CreateEventModal({ open, onClose }: CreateEventModalProps) {
           rows={3}
           className={inputClasses}
         />
-
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value as EventType)}
-          className={inputClasses}
-        >
-          {EVENT_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
