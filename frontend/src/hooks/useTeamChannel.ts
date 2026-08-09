@@ -19,8 +19,9 @@ interface TeamEventContent {
 
 export function useTeamChannel(teamId: string | null) {
   const { status } = useChannel<TeamEventContent>({
-    channelId: teamId ? teamChannel(teamId) : '',
-    history: 10,
+    channelId: teamId ? teamChannel(teamId) : '__noop__',
+    history: teamId ? 10 : 0,
+    enabled: !!teamId,
     onMessage: (msg) => {
       if (!teamId) return;
       const content = (msg as unknown as { content?: TeamEventContent }).content;
