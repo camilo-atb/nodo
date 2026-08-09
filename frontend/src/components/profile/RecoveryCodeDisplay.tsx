@@ -45,7 +45,17 @@ export function RecoveryCodeDisplay({ code, onContinue }: RecoveryCodeDisplayPro
 
       <header className="rc-header">
         <div className="rc-logo">NODO<b>●</b></div>
-        <div className="rc-live"><i />The network is live</div>
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          <div className="rc-live"><i />The network is live</div>
+          <button
+            onClick={() => { document.documentElement.classList.toggle('dark'); localStorage.setItem('nodo-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); }}
+            className="rc-theme-btn"
+            aria-label="Toggle theme"
+          >
+            <svg className="rc-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg className="rc-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          </button>
+        </div>
       </header>
 
       <main className="rc-main">
@@ -201,6 +211,42 @@ export function RecoveryCodeDisplay({ code, onContinue }: RecoveryCodeDisplayPro
         @keyframes rc-dash{to{stroke-dashoffset:-180}}
         @media(max-width:900px){.rc-layout{grid-template-columns:minmax(0,520px)}.rc-side{display:none}}
         @media(max-width:650px){.rc-header{width:calc(100% - 32px);height:70px}.rc-main{width:calc(100% - 32px);padding:20px 0 45px}.rc-card{padding:30px 20px 27px}.rc-title{font-size:28px}.rc-chars{gap:5px}.rc-char{height:52px;font-size:18px}}
+
+        /* LIGHT MODE */
+        html:not(.dark) .rc-page{background:radial-gradient(circle at 75% 20%,rgba(6,182,212,.05),transparent 27%),#f7f8fa;color:#111318}
+        html:not(.dark) .rc-grid{opacity:.15}
+        html:not(.dark) .rc-logo{color:#111318}
+        html:not(.dark) .rc-live{color:#6b7280}
+        html:not(.dark) .rc-node{border-color:rgba(6,182,212,.3);background:rgba(6,182,212,.08);box-shadow:none}
+        html:not(.dark) .rc-node.green{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)}
+        html:not(.dark) .rc-ambient line{stroke:rgba(6,182,212,.08)}
+        html:not(.dark) .rc-card{background:#fff;border-color:#e5e7eb;box-shadow:0 20px 60px rgba(0,0,0,.06)}
+        html:not(.dark) .rc-card:before{background:linear-gradient(145deg,rgba(6,182,212,.2),transparent 35%)}
+        html:not(.dark) .rc-title{color:#111318}
+        html:not(.dark) .rc-subtitle{color:#6b7280}
+        html:not(.dark) .rc-codebox{background:#f9fafb;border-color:#e5e7eb;box-shadow:none}
+        html:not(.dark) .rc-caption{color:#9ca3af}
+        html:not(.dark) .rc-copybtn{border-color:#e5e7eb;color:#6b7280;background:#fff}
+        html:not(.dark) .rc-copybtn:hover{border-color:rgba(6,182,212,.4);color:#0891b2}
+        html:not(.dark) .rc-char{background:#fff;border-color:#e5e7eb;color:#111318;text-shadow:none}
+        html:not(.dark) .rc-hint{color:#9ca3af}
+        html:not(.dark) .rc-warning{border-color:rgba(251,113,133,.2);background:rgba(251,113,133,.04)}
+        html:not(.dark) .rc-warning span{color:#6b7280}
+        html:not(.dark) .rc-warning strong{color:#ef4444}
+        html:not(.dark) .rc-check{border-color:#e5e7eb;background:#fff}
+        html:not(.dark) .rc-confirm-text{color:#6b7280}
+        html:not(.dark) .rc-footer{color:#9ca3af}
+        html:not(.dark) .rc-side{color:#9ca3af}
+        html:not(.dark) .rc-value{color:#6b7280}
+        html:not(.dark) .rc-copy-text{color:#9ca3af}
+        html:not(.dark) .rc-mini{border-color:rgba(6,182,212,.2)}
+        .rc-theme-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:none;cursor:pointer;display:grid;place-items:center;transition:.2s}
+        .rc-theme-btn:hover{border-color:rgba(6,182,212,.4)}
+        .rc-sun{display:none;color:#f59e0b}
+        .rc-moon{display:block;color:#94a3b8}
+        html:not(.dark) .rc-sun{display:block}
+        html:not(.dark) .rc-moon{display:none}
+        html:not(.dark) .rc-theme-btn{border-color:#e5e7eb}
       `}</style>
     </div>
   );

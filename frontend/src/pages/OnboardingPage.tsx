@@ -79,9 +79,51 @@ const chooseStyles = `
   @keyframes auth-float { 0%,100% { transform:translate3d(0,0,0); } 50% { transform:translate3d(0,-12px,0); } }
   @keyframes auth-dash { to { stroke-dashoffset:-140; } }
   @media(max-width:650px) { .auth-header { width:calc(100% - 32px); height:70px; } .auth-main { width:calc(100% - 32px); padding:22px 0 45px; } .auth-card { padding:34px 22px 30px; } .auth-title { font-size:29px; } .auth-key-ring { display:none; } }
+
+  /* LIGHT MODE — AUTH PAGES */
+  html:not(.dark) .auth-page { background: radial-gradient(circle at 75% 20%,rgba(6,182,212,.05),transparent 27%),#f7f8fa; color:#111318; }
+  html:not(.dark) .auth-grid { opacity:.2; }
+  html:not(.dark) .auth-card { background:rgba(255,255,255,.95); border-color:#e5e7eb; box-shadow:0 30px 100px rgba(0,0,0,.08); }
+  html:not(.dark) .auth-card:before { background:linear-gradient(145deg,rgba(6,182,212,.2),transparent 38%); }
+  html:not(.dark) .auth-title { color:#111318; }
+  html:not(.dark) .auth-subtitle { color:#6b7280; }
+  html:not(.dark) .auth-btn-secondary { background:#f9fafb; color:#6b7280; border-color:#e5e7eb; }
+  html:not(.dark) .auth-btn-secondary:hover { background:#f3f4f6; border-color:#d1d5db; color:#111318; }
+  html:not(.dark) .auth-footer { color:#9ca3af; }
+  html:not(.dark) .auth-code-input { background:#f9fafb; border-color:#e5e7eb; color:#111318; }
+  html:not(.dark) .auth-code-input::placeholder { color:#d1d5db; }
+  html:not(.dark) .auth-code-input:focus { border-color:rgba(6,182,212,.7); box-shadow:0 0 0 3px rgba(6,182,212,.09); }
+  html:not(.dark) .auth-code-meta { color:#9ca3af; }
+  html:not(.dark) .auth-code-label { color:#374151; }
+  html:not(.dark) .auth-back { color:#6b7280; }
+  html:not(.dark) .auth-back:hover { color:#111318; }
+  html:not(.dark) .auth-logo { color:#111318; }
+  html:not(.dark) .auth-live { color:#6b7280; }
+  html:not(.dark) .auth-node { border-color:rgba(6,182,212,.3); background:rgba(6,182,212,.08); box-shadow:none; }
 `;
 
 /* ─── Helpers ─── */
+
+function ThemeToggleBtn() {
+  return (
+    <button
+      onClick={() => {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('nodo-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      }}
+      style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,.1)',background:'none',cursor:'pointer',display:'grid',placeItems:'center',transition:'.2s'}}
+      aria-label="Toggle theme"
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display: document.documentElement.classList.contains('dark') ? 'none' : 'block', color: '#f59e0b'}}>
+        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{display: document.documentElement.classList.contains('dark') ? 'block' : 'none', color: '#94a3b8'}}>
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+    </button>
+  );
+}
+
 function getNodePosition(id: string): { x: number; y: number } {
   if (id === 'core') return { x: 50, y: 50 };
   const node = NETWORK_NODES.find((n) => n.id === id);
@@ -259,7 +301,10 @@ export function OnboardingPage() {
         </div>
         <header className="auth-header">
           <div className="auth-logo">NODO<b>●</b></div>
-          <div className="auth-live"><i />The network is live</div>
+          <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+            <div className="auth-live"><i />The network is live</div>
+            <ThemeToggleBtn />
+          </div>
         </header>
         <main className="auth-main">
           <section className="auth-card">
@@ -308,7 +353,10 @@ export function OnboardingPage() {
         </div>
         <header className="auth-header">
           <div className="auth-logo">NODO<b>●</b></div>
-          <div className="auth-live"><i />The network is live</div>
+          <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+            <div className="auth-live"><i />The network is live</div>
+            <ThemeToggleBtn />
+          </div>
         </header>
         <main className="auth-main">
           <section className="auth-card">
@@ -367,9 +415,12 @@ export function OnboardingPage() {
           <span className="ob-logo-text">NODO</span>
           <span className="ob-logo-dot" />
         </div>
-        <div className="ob-header-status">
-          <span className="ob-status-pulse" />
-          The network is live
+        <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+          <div className="ob-header-status">
+            <span className="ob-status-pulse" />
+            The network is live
+          </div>
+          <ThemeToggleBtn />
         </div>
       </header>
 
@@ -919,6 +970,49 @@ export function OnboardingPage() {
           -webkit-text-fill-color: transparent;
           animation: ob-shimmer 1.5s linear infinite;
         }
+
+        /* LIGHT MODE — PROFILE FORM */
+        html:not(.dark) .ob-page { background: radial-gradient(circle at 75% 20%, rgba(6,182,212,0.05), transparent 27%), #f7f8fa; color: #111318; }
+        html:not(.dark) .ob-recovery { background: #f7f8fa; }
+        html:not(.dark) .ob-header { border-bottom-color: #e5e7eb; }
+        html:not(.dark) .ob-logo-text { color: #111318; }
+        html:not(.dark) .ob-header-status { color: #6b7280; }
+        html:not(.dark) .ob-form-panel { background: #fff; border-color: #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        html:not(.dark) .ob-back-btn { color: #6b7280; }
+        html:not(.dark) .ob-back-btn:hover { color: #111318; }
+        html:not(.dark) .ob-input { background: #f9fafb; border-color: #e5e7eb; color: #111318; }
+        html:not(.dark) .ob-input::placeholder { color: #9ca3af; }
+        html:not(.dark) .ob-select { background: #f9fafb; border-color: #e5e7eb; color: #111318; }
+        html:not(.dark) .ob-textarea { background: #f9fafb; border-color: #e5e7eb; color: #111318; }
+        html:not(.dark) .ob-textarea::placeholder { color: #9ca3af; }
+        html:not(.dark) .ob-skills-box { background: #f9fafb; border-color: #e5e7eb; }
+        html:not(.dark) .ob-visual { background: #f9fafb; border-color: #e5e7eb; }
+        html:not(.dark) .ob-visual-grid { background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px); }
+        html:not(.dark) .ob-label { color: #374151; }
+        html:not(.dark) .ob-optional { color: #9ca3af; }
+        html:not(.dark) .ob-hint { color: #6b7280; }
+        html:not(.dark) .ob-legal { color: #9ca3af; }
+        html:not(.dark) .ob-section-title { color: #111318; }
+        html:not(.dark) .ob-section-title span { color: #111318; }
+        html:not(.dark) .ob-section-desc { color: #6b7280; }
+        html:not(.dark) .ob-analyze-btn { background: rgba(6,182,212,0.08); color: #0891b2; border-color: rgba(6,182,212,0.2); }
+        html:not(.dark) .ob-eyebrow { color: #0891b2; }
+        html:not(.dark) .ob-form-title { color: #111318; }
+        html:not(.dark) .ob-form-desc { color: #6b7280; }
+        html:not(.dark) .ob-required { color: #ef4444; }
+        html:not(.dark) .ob-node-circle { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        html:not(.dark) .ob-node-person { border-color: rgba(6,182,212,0.3); }
+        html:not(.dark) .ob-node-team { border-color: rgba(139,92,246,0.3); }
+        html:not(.dark) .ob-node-idea { border-color: rgba(52,211,153,0.3); }
+        html:not(.dark) .ob-core { background: #fff; border-color: rgba(6,182,212,0.25); box-shadow: 0 0 0 12px rgba(6,182,212,0.03), 0 4px 20px rgba(0,0,0,0.06); }
+        html:not(.dark) .ob-core-percent { color: #111318; }
+        html:not(.dark) .ob-core-label { color: #9ca3af; }
+        html:not(.dark) .ob-preview { background: #fff; border-color: #e5e7eb; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+        html:not(.dark) .ob-preview-name { color: #111318; }
+        html:not(.dark) .ob-preview-handle { color: #6b7280; }
+        html:not(.dark) .ob-preview-headline { color: #6b7280; }
+        html:not(.dark) .ob-preview-skill { border-color: rgba(6,182,212,0.25); color: #0891b2; background: rgba(6,182,212,0.05); }
+        html:not(.dark) .ob-preview-skill-more { border-color: #e5e7eb; color: #9ca3af; }
       `}</style>
     </div>
   );

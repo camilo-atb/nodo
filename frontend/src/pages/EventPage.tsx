@@ -83,7 +83,7 @@ export function EventPage() {
 
   if (!event || joined === null) {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa] dark:bg-[#07090c]">
         <Spinner size="lg" />
       </div>
     );
@@ -91,26 +91,28 @@ export function EventPage() {
 
   if (joined) {
     return (
-      <div className="h-screen bg-bg flex flex-col overflow-hidden">
+      <div className="h-screen flex flex-col overflow-hidden bg-[#f7f8fa] dark:bg-[#07090c]">
         <MainLayout eventId={eventId!} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-bg flex items-center justify-center">
-      <div className="max-w-md w-full mx-4 border border-border bg-panel rounded-2xl p-6">
+    <div className="min-h-screen flex items-center justify-center bg-[#f7f8fa] dark:bg-[#07090c]">
+      <div className="max-w-md w-full mx-4 border rounded-2xl p-6
+        bg-white border-gray-200
+        dark:bg-[#101317] dark:border-[#20262d]">
         <div className="flex items-center gap-3 mb-4">
           <Badge color={typeColors[event.kind]}>
             {typeLabels[event.kind]}
           </Badge>
-          <span className="text-[11px] text-muted-2">
+          <span className="text-[11px] text-gray-500 dark:text-[#68717d]">
             {event.participantCount} participants
           </span>
         </div>
 
-        <h1 className="text-xl font-bold text-white mb-2">{event.name}</h1>
-        <p className="text-sm text-muted mb-2">{event.description}</p>
+        <h1 className="text-xl font-bold mb-2 text-[#111318] dark:text-[#f4f6f8]">{event.name}</h1>
+        <p className="text-sm mb-2 text-gray-500 dark:text-[#9da6b1]">{event.description}</p>
 
         {/* Tags */}
         {event.tags.length > 0 && (
@@ -118,7 +120,9 @@ export function EventPage() {
             {event.tags.map((tag) => (
               <span
                 key={tag}
-                className="text-[10px] text-muted bg-panel-2 border border-border px-1.5 py-0.5 rounded"
+                className="text-[10px] px-1.5 py-0.5 rounded border
+                  bg-gray-50 border-gray-200 text-gray-500
+                  dark:bg-[#15191e] dark:border-[#20262d] dark:text-[#9da6b1]"
               >
                 {tag}
               </span>
@@ -126,7 +130,7 @@ export function EventPage() {
           </div>
         )}
 
-        <div className="text-xs text-muted-2 mb-6">
+        <div className="text-xs mb-6 text-gray-500 dark:text-[#68717d]">
           {/* Un `project` no tiene fechas (ADR-013): son nulables. */}
           {event.startsAt === null && event.endsAt === null
             ? 'Sin fechas'

@@ -29,9 +29,23 @@ export function LandingPage() {
             <button onClick={() => scrollTo('features')}>Features</button>
           </div>
 
-          <button onClick={() => navigate('/onboarding')} className="nodo-nav-cta">
-            Get Started ↗
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => {
+                const html = document.documentElement;
+                html.classList.toggle('dark');
+                localStorage.setItem('nodo-theme', html.classList.contains('dark') ? 'dark' : 'light');
+              }}
+              className="nodo-theme-toggle"
+              aria-label="Toggle theme"
+            >
+              <span className="nodo-theme-sun">☀</span>
+              <span className="nodo-theme-moon">☾</span>
+            </button>
+            <button onClick={() => navigate('/onboarding')} className="nodo-nav-cta">
+              Get Started ↗
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -274,6 +288,56 @@ export function LandingPage() {
           overflow-x: hidden;
         }
 
+        /* ═══ LIGHT MODE ═══ */
+        html:not(.dark) .nodo-landing {
+          background: radial-gradient(circle at 75% 20%, rgba(6,182,212,0.06), transparent 27%), #f7f8fa;
+          color: #111318;
+        }
+        html:not(.dark) .nodo-nav {
+          background: rgba(255,255,255,0.9) !important;
+          border-bottom-color: #e5e7eb !important;
+        }
+        html:not(.dark) .nodo-logo-text { color: #111318; }
+        html:not(.dark) .nodo-nav-links { color: #6b7280; }
+        html:not(.dark) .nodo-nav-links button:hover { color: #111318; }
+        html:not(.dark) .nodo-hero-title { color: #111318; }
+        html:not(.dark) .nodo-gradient {
+          background: linear-gradient(100deg, #111318 20%, #4b5563 50%, #0891b2 90%);
+          -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+        html:not(.dark) .nodo-hero-tagline { color: #4b5563; }
+        html:not(.dark) .nodo-hero-description { color: #6b7280; }
+        html:not(.dark) .nodo-hero-badge { border-color: rgba(52,211,153,0.25); background: rgba(52,211,153,0.06); color: #6b7280; }
+        html:not(.dark) .nodo-btn-secondary { color: #6b7280; border-color: #e5e7eb; }
+        html:not(.dark) .nodo-btn-secondary:hover { border-color: #111318; color: #111318; }
+        html:not(.dark) .nodo-network-card { background: rgba(255,255,255,0.9); border-color: #e5e7eb; box-shadow: 0 15px 60px rgba(0,0,0,0.08); }
+        html:not(.dark) .nodo-card-name { color: #111318; }
+        html:not(.dark) .nodo-card-role { color: #6b7280; }
+        html:not(.dark) .nodo-card-eyebrow { color: #9ca3af; }
+        html:not(.dark) .nodo-match-detail { color: #6b7280; }
+        html:not(.dark) .nodo-hero-status { color: #6b7280; }
+        html:not(.dark) .nodo-marquee-section { border-color: #e5e7eb; background: rgba(255,255,255,0.5); }
+        html:not(.dark) .nodo-marquee-item { color: #d1d5db; }
+        html:not(.dark) .nodo-section-title { color: #111318; }
+        html:not(.dark) .nodo-section-desc { color: #6b7280; }
+        html:not(.dark) .nodo-section-border { border-bottom-color: #e5e7eb; }
+        html:not(.dark) .nodo-section-border-top { border-top-color: #e5e7eb; }
+        html:not(.dark) .nodo-problem-msg { background: rgba(0,0,0,0.03); border-color: #e5e7eb; color: #6b7280; }
+        html:not(.dark) .nodo-problem-footer { color: #9ca3af; }
+        html:not(.dark) .nodo-match-item-title { color: #111318; }
+        html:not(.dark) .nodo-match-item-desc { color: #6b7280; }
+        html:not(.dark) .nodo-step-card { background: #fff; border-color: #e5e7eb; }
+        html:not(.dark) .nodo-step-card:hover { border-color: rgba(6,182,212,0.4); }
+        html:not(.dark) .nodo-step-number { color: rgba(0,0,0,0.03); }
+        html:not(.dark) .nodo-step-title { color: #111318; }
+        html:not(.dark) .nodo-step-desc { color: #6b7280; }
+        html:not(.dark) .nodo-step-tag { background: #f3f4f6; border-color: #e5e7eb; color: #6b7280; }
+        html:not(.dark) .nodo-cta-title { color: #111318; }
+        html:not(.dark) .nodo-cta-desc { color: #6b7280; }
+        html:not(.dark) .nodo-footer { border-top-color: #e5e7eb; }
+        html:not(.dark) .nodo-footer-inner { color: #6b7280; }
+        html:not(.dark) .nodo-hero-bg { opacity: 0.02; background-image: linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px); }
+
         /* ═══ NAV ═══ */
         .nodo-nav {
           position: fixed; top: 0; left: 0; right: 0; z-index: 50;
@@ -296,6 +360,18 @@ export function LandingPage() {
           padding: 8px 16px; background: none; cursor: pointer; transition: background 0.2s;
         }
         .nodo-nav-cta:hover { background: rgba(6,182,212,0.1); }
+        .nodo-theme-toggle {
+          width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+          background: none; cursor: pointer; display: grid; place-items: center;
+          font-size: 16px; transition: all 0.2s;
+        }
+        .nodo-theme-toggle:hover { border-color: rgba(6,182,212,0.4); }
+        .nodo-theme-sun { display: none; }
+        .nodo-theme-moon { display: inline; color: #94a3b8; }
+        html:not(.dark) .nodo-theme-sun { display: inline; color: #f59e0b; }
+        html:not(.dark) .nodo-theme-moon { display: none; }
+        html:not(.dark) .nodo-theme-toggle { border-color: #e5e7eb; }
+        html:not(.dark) .nodo-theme-toggle:hover { border-color: rgba(6,182,212,0.4); }
         @media (min-width: 768px) { .nodo-nav-links { display: flex; } }
 
         /* ═══ HERO ═══ */
